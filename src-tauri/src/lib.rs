@@ -1,4 +1,4 @@
-use std::process::Command;
+use std::{os::windows::process::CommandExt, process::Command};
 
 #[tauri::command]
 fn is_ffmpeg_available() -> bool {
@@ -23,6 +23,7 @@ async fn compress(input_path: String, output_path: String) -> bool {
         .arg("-crf")
         .arg("26")
         .arg(output_path)
+        .creation_flags(0x08000000) // CREATE_NO_WINDOW
         .output()
         .map(|output| output.status.success())
         .unwrap_or(false)
