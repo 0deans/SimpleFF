@@ -5,6 +5,6 @@ export const prerender = true;
 export const ssr = false;
 
 export const load: LayoutLoad = async () => {
-	const isFFmpegAvailable = await invoke('is_ffmpeg_available');
+	const isFFmpegAvailable = await invoke<boolean>('is_ffmpeg_available');
 	return { isFFmpegAvailable };
 };

@@ -1,7 +1,7 @@
 {
 	"productName": "simpleff",
 	"version": "0.1.0",
-	"identifier": "com.tauri.dev",
+	"identifier": "me.0dean.simpleff",
 	"build": {
 		"frontendDist": "../build",
 		"devUrl": "http://localhost:5173",

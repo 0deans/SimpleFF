@@ -10,8 +10,7 @@ fn is_ffmpeg_available() -> bool {
 }
 
 #[tauri::command]
-fn compress(input_path: &str, output_path: &str) -> bool {
-    println!("Compressing {} to {}", input_path, output_path);
+async fn compress(input_path: String, output_path: String) -> bool {
     Command::new("ffmpeg")
         .arg("-i")
         .arg(input_path)
