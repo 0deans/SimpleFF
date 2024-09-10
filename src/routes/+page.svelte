@@ -45,7 +45,7 @@
 
 			{#if filePaths}
 				<div class="my-2 space-y-2">
-					{#each filePaths as filePath}
+					{#each filePaths as filePath (filePath)}
 						<FIleItem {filePath} />
 					{/each}
 				</div>
