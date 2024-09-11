@@ -1,10 +1,21 @@
 use serde_json::json;
 use std::{
-    io::{BufRead, BufReader}, os::windows::process::CommandExt, process::{Command, Stdio}
+    collections::HashMap,
+    fs,
+    io::{BufRead, BufReader},
+    os::windows::process::CommandExt,
+    process::{Child, Command, Stdio},
+    sync::Mutex,
+    thread,
 };
-use tauri::{AppHandle, Emitter};
+use tauri::{AppHandle, Emitter, Manager, State};
 
 pub mod utils;
+
+#[derive(Default)]
+struct AppState {
+    ffmpeg_processes: HashMap<String, Child>,
+}
 
 #[tauri::command]
 fn is_ffmpeg_available() -> bool {
@@ -16,7 +27,13 @@ fn is_ffmpeg_available() -> bool {
 }
 
 #[tauri::command]
-async fn compress(input_path: String, output_path: String, app: AppHandle) -> bool {
+async fn compress(
+    input_path: String,
+    output_path: String,
+    app: AppHandle,
+    state: State<'_, Mutex<AppState>>,
+) -> Result<bool, ()> {
+    let mut state_lock = state.lock().unwrap();
     let duration = utils::get_video_duration(&input_path);
 
     let mut child = Command::new("ffmpeg")
@@ -43,6 +60,10 @@ async fn compress(input_path: String, output_path: String, app: AppHandle) -> bo
 
     let stdout = child.stdout.take().expect("Failed to capture stdout");
     let reader = BufReader::new(stdout);
+    state_lock
+        .ffmpeg_processes
+        .insert(output_path.clone(), child);
+    drop(state_lock);
 
     for line in reader.lines() {
         if let Ok(line) = line {
@@ -60,15 +81,38 @@ async fn compress(input_path: String, output_path: String, app: AppHandle) -> bo
         }
     }
 
-    let status = child.wait().expect("Failed to wait on child process");
-    status.success()
+    Ok(true)
+}
+
+#[tauri::command]
+async fn cancel_compress(
+    output_path: String,
+    state: State<'_, Mutex<AppState>>,
+) -> Result<bool, ()> {
+    let mut state_lock = state.lock().unwrap();
+    if let Some(mut child) = state_lock.ffmpeg_processes.remove(&output_path) {
+        child.kill().expect("Failed to kill ffmpeg process");
+        thread::sleep(std::time::Duration::from_secs(1));
+        if fs::metadata(&output_path).is_ok() {
+            fs::remove_file(&output_path).expect("Failed to delete file");
+        }
+    }
+    Ok(true)
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
-        .invoke_handler(tauri::generate_handler![is_ffmpeg_available, compress])
+        .invoke_handler(tauri::generate_handler![
+            is_ffmpeg_available,
+            compress,
+            cancel_compress
+        ])
+        .setup(|app| {
+            app.manage(Mutex::new(AppState::default()));
+            Ok(())
+        })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

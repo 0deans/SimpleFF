@@ -13,6 +13,8 @@
 	let isCompressing = false;
 	let compressProgress = 0;
 
+	$: outputPath = filePath.replace(/\.mp4$/, '_compressed.mp4');
+
 	const unlisten = listen<string>('compress:progress', (event) => {
 		const data = JSON.parse(event.payload) as CompressProgress;
 		if (data.filePath !== filePath) return;
@@ -24,8 +26,13 @@
 		compressProgress = 0;
 		await invoke('compress', {
 			inputPath: filePath,
-			outputPath: filePath.replace(/\.mp4$/, '_compressed.mp4')
+			outputPath: outputPath
 		});
+		isCompressing = false;
+	};
+
+	const cancel = async () => {
+		await invoke('cancel_compress', { outputPath });
 		isCompressing = false;
 	};
 
@@ -42,10 +49,10 @@
 		class="rounded-md border border-blue-400 px-2 py-1 transition enabled:hover:bg-blue-400 enabled:active:scale-95 disabled:border-gray-400"
 	>
 		{#if isCompressing}
-			<div class="flex items-center space-x-1 min-w-16 justify-center">
+			<button on:click={cancel} class="flex min-w-16 items-center justify-center space-x-1">
 				<span class="tabular-nums">{compressProgress.toFixed(0)}%</span>
 				<Icon icon="mdi:loading" class="animate-spin" />
-			</div>
+			</button>
 		{:else}
 			Compress
 		{/if}
