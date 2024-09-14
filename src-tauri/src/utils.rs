@@ -1,8 +1,6 @@
-use std::{os::windows::process::CommandExt, path::PathBuf, process::Command};
+use std::{os::windows::process::CommandExt, process::Command};
 
-pub fn get_video_duration(filepath: &str) -> f64 {
-    let filepath = PathBuf::from(filepath);
-
+pub fn get_video_duration(filepath: &String) -> f64 {
     let output = Command::new("ffprobe")
         .args(&[
             "-v",
@@ -11,7 +9,7 @@ pub fn get_video_duration(filepath: &str) -> f64 {
             "format=duration",
             "-of",
             "default=noprint_wrappers=1:nokey=1",
-            filepath.to_str().unwrap(),
+            filepath,
         ])
         .creation_flags(0x08000000) // CREATE_NO_WINDOW
         .output()

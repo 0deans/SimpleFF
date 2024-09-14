@@ -6,10 +6,10 @@ use std::{
     os::windows::process::CommandExt,
     process::{Child, Command, Stdio},
     sync::Mutex,
-    thread,
 };
 use tauri::{AppHandle, Emitter, Manager, State};
 
+// pub mod folder;
 pub mod utils;
 
 #[derive(Default)]
@@ -89,15 +89,22 @@ async fn cancel_compress(
     output_path: String,
     state: State<'_, Mutex<AppState>>,
 ) -> Result<bool, ()> {
-    let mut state_lock = state.lock().unwrap();
+    let mut state_lock = state.lock().map_err(|_| ())?;
     if let Some(mut child) = state_lock.ffmpeg_processes.remove(&output_path) {
         child.kill().expect("Failed to kill ffmpeg process");
-        thread::sleep(std::time::Duration::from_secs(1));
-        if fs::metadata(&output_path).is_ok() {
-            fs::remove_file(&output_path).expect("Failed to delete file");
-        }
+        // thread::sleep(std::time::Duration::from_secs(1));
+        // if fs::metadata(&output_path).is_ok() {
+        //     fs::remove_file(&output_path)
+        // }
     }
     Ok(true)
+}
+
+#[tauri::command]
+fn get_file_size(path: String) -> Result<u64, ()> {
+    fs::metadata(path)
+        .map(|metadata| metadata.len())
+        .map_err(|_| ())
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -107,7 +114,8 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             is_ffmpeg_available,
             compress,
-            cancel_compress
+            cancel_compress,
+            get_file_size
         ])
         .setup(|app| {
             app.manage(Mutex::new(AppState::default()));

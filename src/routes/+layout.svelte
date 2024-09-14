@@ -10,17 +10,32 @@
 	const appWindow = getCurrentWebviewWindow();
 </script>
 
-<div class="flex size-full flex-col overflow-hidden rounded-lg">
+<div class="flex size-full flex-col overflow-hidden rounded-lg bg-white">
+	<!-- svelte-ignore a11y-no-static-element-interactions -->
 	<div
-		data-tauri-drag-region
-		class="flex w-full items-center justify-between bg-gray-600 text-white"
+		on:mousedown={(e) => {
+			if (e.buttons !== 1) return;
+			appWindow.startDragging();
+		}}
+		class="flex w-full items-center justify-between border-b border-gray-300"
 	>
-		<h1 data-tauri-drag-region class="ml-2 touch-none select-none font-semibold">SimpleFF</h1>
+		<div class="ml-2 flex items-center space-x-1">
+			<Icon icon="logos:ffmpeg-icon" />
+			<h1 class="touch-none select-none font-semibold">SimpleFF</h1>
+		</div>
 		<div class="flex items-center">
-			<button on:click={() => appWindow.minimize()} class="p-2 hover:bg-gray-500">
+			<button
+				on:mousedown|stopPropagation
+				on:click={() => appWindow.minimize()}
+				class="p-2 hover:bg-gray-200"
+			>
 				<Icon icon="mdi:minimize" class="cursor-pointer" />
 			</button>
-			<button on:click={() => appWindow.close()} class="p-2 hover:bg-red-500">
+			<button
+				on:mousedown|stopPropagation
+				on:click={() => appWindow.close()}
+				class="p-2 hover:bg-red-500"
+			>
 				<Icon icon="mdi:close" class="cursor-pointer" />
 			</button>
 		</div>
