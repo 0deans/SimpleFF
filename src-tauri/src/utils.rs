@@ -1,5 +1,7 @@
 use std::{os::windows::process::CommandExt, process::Command};
 
+pub const CREATE_NO_WINDOW: u32 = 0x08000000;
+
 pub fn get_video_duration(filepath: &String) -> f64 {
     let output = Command::new("ffprobe")
         .args(&[

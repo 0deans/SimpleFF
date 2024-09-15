@@ -19,6 +19,7 @@
 
 	let isCompressing = false;
 	let progress = writable(0);
+	let isDone = false;
 
 	const {
 		elements: { root },
@@ -36,9 +37,10 @@
 	});
 
 	const compress = async () => {
+		isDone = false;
 		isCompressing = true;
 		progress.set(0);
-		await invoke('compress', {
+		isDone = await invoke<boolean>('compress', {
 			inputPath: path,
 			outputPath: outputPath
 		});
@@ -67,6 +69,9 @@
 						<span class={cn(!isCompressing && 'hidden')}>
 							| {$progress.toFixed(0)}%
 						</span>
+						{#if isDone}
+							<span class="text-green-400">&#183; Done</span>
+						{/if}
 					{/await}
 				</span>
 				<div class="flex items-center space-x-2">
