@@ -1,25 +1,16 @@
 <script lang="ts">
 	import Icon from '@iconify/svelte';
 	import { invoke } from '@tauri-apps/api/core';
-	import { cn, formatFileSize } from './utils';
+	import { basename, cn, formatFileSize } from './utils';
 	import { writable } from 'svelte/store';
 	import { createProgress, melt } from '@melt-ui/svelte';
-	import { listen } from '@tauri-apps/api/event';
-	import { onDestroy } from 'svelte';
+	import { files } from './state.svelte';
+	import type { File } from './types';
 
-	interface CompressProgress {
-		filePath: string;
-		percentage: number;
-	}
-
-	export let path: string;
-	export let onRemove: (path: string) => void;
-	$: fileName = path.split(/[\\/]/).reverse()[0];
-	$: outputPath = path.replace(/\.mp4$/, '_compressed.mp4');
-
-	let isCompressing = false;
-	let progress = writable(0);
-	let isDone = false;
+	export let file: File;
+	$: fileName = basename(file.path);
+	$: isCompressing = !!file.outputPath && !file.isDone;
+	$: progress = writable(file.progress);
 
 	const {
 		elements: { root },
@@ -27,34 +18,21 @@
 	} = createProgress({ value: progress, max: 100 });
 
 	const get_file_size = async () => {
-		return await invoke<number>('get_file_size', { path });
-	};
-
-	const unlisten = listen<string>('compress:progress', (event) => {
-		const data = JSON.parse(event.payload) as CompressProgress;
-		if (data.filePath !== path) return;
-		progress.set(data.percentage);
-	});
-
-	const compress = async () => {
-		isDone = false;
-		isCompressing = true;
-		progress.set(0);
-		isDone = await invoke<boolean>('compress', {
-			inputPath: path,
-			outputPath: outputPath
-		});
-		isCompressing = false;
+		return await invoke<number>('get_file_size', { path: file.path });
 	};
 
 	const cancel = async () => {
-		await invoke('cancel_compress', { outputPath });
-		isCompressing = false;
+		await invoke('cancel_compress', { outputPath: file.outputPath });
+		files.update((files) => {
+			const f = files.find((f) => f.path === file.path);
+			if (f) f.outputPath = undefined;
+			return files;
+		});
 	};
 
-	onDestroy(async () => {
-		(await unlisten)();
-	});
+	const showInFolder = async () => {
+		await invoke('show_in_folder', { path: file.outputPath });
+	};
 </script>
 
 <div class="rounded-lg border-2 border-gray-300 p-2">
@@ -69,23 +47,34 @@
 						<span class={cn(!isCompressing && 'hidden')}>
 							| {$progress.toFixed(0)}%
 						</span>
-						{#if isDone}
+						{#if file.isDone}
 							<span class="text-green-400">&#183; Done</span>
 						{/if}
 					{/await}
 				</span>
 				<div class="flex items-center space-x-2">
-					<button
-						on:click={isCompressing ? cancel : compress}
+					{#if file.isDone}
+						<button
+							on:click={showInFolder}
+							class="rounded-md bg-gray-100 p-0.5 text-orange-500 hover:bg-gray-200 hover:text-orange-700"
+						>
+							<Icon icon="bx:bx-folder-open" class="size-5" />
+						</button>
+					{/if}
+					<!-- svelte-ignore a11y-no-static-element-interactions -->
+					<svelte:element
+						this={isCompressing ? 'button' : 'a'}
+						href={isCompressing ? null : `/${encodeURIComponent(file.path)}`}
+						on:click={isCompressing ? cancel : null}
 						class={cn(
 							'rounded-md bg-gray-100 px-2 font-medium text-blue-500 hover:bg-gray-200 hover:text-blue-700',
 							isCompressing && 'bg-red-500 text-white hover:bg-red-600 hover:text-white'
 						)}
 					>
-						{isCompressing ? 'cancel' : 'compress'}
-					</button>
+						{isCompressing ? 'cancel' : 'continue'}
+					</svelte:element>
 					<button
-						on:click={() => onRemove(path)}
+						on:click={() => files.remove(file.path)}
 						disabled={isCompressing}
 						class="rounded-md bg-gray-100 p-0.5 text-red-500 enabled:hover:bg-gray-200 enabled:hover:text-red-700 disabled:opacity-50"
 					>

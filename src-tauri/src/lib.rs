@@ -9,7 +9,7 @@ use std::{
     sync::{Arc, Mutex},
     thread,
 };
-use tauri::{AppHandle, Emitter, Manager, State};
+use tauri::{AppHandle, Emitter, Manager, State, WindowEvent};
 
 pub mod utils;
 
@@ -124,6 +124,17 @@ fn get_file_size(path: String) -> Result<u64, ()> {
         .map_err(|_| ())
 }
 
+#[tauri::command]
+fn show_in_folder(path: String) {
+    #[cfg(target_os = "windows")]
+    {
+        let _ = Command::new("explorer")
+            .args(["/select,", &path]) // comma is important
+            .creation_flags(utils::CREATE_NO_WINDOW)
+            .spawn();
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -132,11 +143,28 @@ pub fn run() {
             is_ffmpeg_available,
             compress,
             cancel_compress,
-            get_file_size
+            get_file_size,
+            show_in_folder
         ])
         .setup(|app| {
             app.manage(Mutex::new(AppState::default()));
             Ok(())
+        })
+        .on_window_event(|window, event| match event {
+            WindowEvent::CloseRequested { .. } => {
+                let app_handle = window.app_handle();
+                let state = app_handle.state::<Mutex<AppState>>();
+
+                let state = state.lock().unwrap();
+                for (output_path, child) in state.ffmpeg_processes.iter() {
+                    child.kill().expect("failed to kill child");
+                    thread::sleep(std::time::Duration::from_secs(1));
+                    if fs::metadata(output_path).is_ok() {
+                        fs::remove_file(output_path).unwrap();
+                    }
+                }
+            }
+            _ => {}
         })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

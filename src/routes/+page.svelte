@@ -1,15 +1,16 @@
 <script lang="ts">
 	import { createScrollArea, melt } from '@melt-ui/svelte';
-	import { cn, joinFilePaths } from '$lib/utils';
+	import { cn } from '$lib/utils';
 	import Icon from '@iconify/svelte';
 	import { open } from '@tauri-apps/plugin-dialog';
 	import FileDropZone from '$lib/FileDropZone.svelte';
 	import FileItem from '$lib/FileItem.svelte';
+	import { files } from '$lib/state.svelte';
+	import type { File } from '$lib/types';
 
 	const {
 		elements: { root, content, viewport, scrollbarY, thumbY }
 	} = createScrollArea();
-	let filePaths: string[] | null;
 
 	const handleSelect = async () => {
 		const newPaths = await open({
@@ -22,31 +23,21 @@
 				}
 			]
 		});
-		if (newPaths === null) return;
 
-		filePaths = joinFilePaths({
-			newPaths,
-			oldPaths: filePaths
-		});
+		if (newPaths === null) return;
+		files.add(newPaths.map<File>((path) => ({ path, progress: 0, isDone: false })));
 	};
 
-	const onRemove = (filePath: string) => {
-		filePaths = filePaths?.filter((path) => path !== filePath) ?? null;
+	const handleDrop = (paths: string[]) => {
+		const newFiles = paths.map<File>((path) => ({ path, progress: 0, isDone: false }));
+		files.add(newFiles);
 	};
 </script>
 
 <main use:melt={$root} class="size-full overflow-hidden">
 	<div use:melt={$viewport} class="size-full">
 		<div use:melt={$content} class="!block p-3">
-			<FileDropZone
-				let:isDragging
-				onDrop={(paths) => {
-					filePaths = joinFilePaths({
-						newPaths: paths,
-						oldPaths: filePaths
-					});
-				}}
-			>
+			<FileDropZone let:isDragging onDrop={handleDrop}>
 				<div
 					class={cn(
 						'flex h-36 flex-col items-center justify-center space-y-2 rounded-lg border border-green-400 bg-green-400/10',
@@ -65,17 +56,17 @@
 			</FileDropZone>
 			<p class="mt-2 text-sm font-medium text-gray-600">Only video files are supported.</p>
 
-			{#if !filePaths || filePaths.length === 0}
+			{#if $files.length === 0}
 				<div class="mt-20 flex items-center justify-center text-xl">
 					<Icon icon="twemoji:melting-face" />
 					There are no files
 					<Icon icon="twemoji:melting-face" />
 				</div>
 			{:else}
-				<h2 class="mt-4 text-lg font-medium">Selected Files</h2>
+				<h2 class="mt-2 text-lg font-medium">Selected Files</h2>
 				<div class="mt-2 space-y-2">
-					{#each filePaths as path (path)}
-						<FileItem {path} {onRemove} />
+					{#each $files as file (file.path)}
+						<FileItem {file} />
 					{/each}
 				</div>
 			{/if}

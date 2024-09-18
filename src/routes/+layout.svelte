@@ -1,13 +1,33 @@
 <script lang="ts">
 	import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
+	import { listen } from '@tauri-apps/api/event';
 	import { invalidateAll } from '$app/navigation';
 	import type { PageData } from './$types';
 	import Icon from '@iconify/svelte';
 	import '../app.css';
+	import { onDestroy } from 'svelte';
+	import { files } from '$lib/state.svelte';
 
 	export let data: PageData;
 
+	interface CompressProgress {
+		filePath: string;
+		percentage: number;
+	}
+
 	const appWindow = getCurrentWebviewWindow();
+	const unlisten = listen<string>('compress:progress', (event) => {
+		const data = JSON.parse(event.payload) as CompressProgress;
+		files.update((files) => {
+			const file = files.find((f) => f.path === data.filePath);
+			if (file) file.progress = data.percentage;
+			return files;
+		});
+	});
+
+	onDestroy(async () => {
+		(await unlisten)();
+	});
 </script>
 
 <div class="flex size-full flex-col overflow-hidden rounded-lg bg-white">
