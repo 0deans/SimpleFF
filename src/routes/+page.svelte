@@ -25,7 +25,8 @@
 		});
 
 		if (newPaths === null) return;
-		files.add(newPaths.map<File>((path) => ({ path, progress: 0, isDone: false })));
+		const newFiles = newPaths.map<File>((path) => ({ path, progress: 0, isDone: false }));
+		files.add(newFiles);
 	};
 
 	const handleDrop = (paths: string[]) => {

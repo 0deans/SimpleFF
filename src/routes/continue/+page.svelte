@@ -1,17 +1,18 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { page } from '$app/stores';
 	import { files } from '$lib/state.svelte';
 	import { basename } from '$lib/utils';
 	import Icon from '@iconify/svelte';
 	import { invoke } from '@tauri-apps/api/core';
+	import type { PageData } from './$types';
 
-	let selectedFilePath = $page.params.path;
-	const output = selectedFilePath.replace(/\.mp4$/, '_compressed.mp4');
+	export let data: PageData;
+	const { selectedFile } = data;
+	const output = selectedFile.path.replace(/\.mp4$/, '_compressed.mp4');
 
 	const compress = async () => {
 		files.update((files) => {
-			const file = files.find((f) => f.path === selectedFilePath);
+			const file = files.find((f) => f.path === selectedFile.path);
 			if (file) {
 				file.outputPath = output;
 				file.progress = 0;
@@ -21,12 +22,12 @@
 		});
 
 		invoke<boolean>('compress', {
-			inputPath: selectedFilePath,
+			inputPath: selectedFile.path,
 			outputPath: output
 		}).then((success) => {
 			if (!success) return;
 			files.update((files) => {
-				const file = files.find((f) => f.path === selectedFilePath);
+				const file = files.find((f) => f.path === selectedFile.path);
 				if (file) file.isDone = true;
 				return files;
 			});
@@ -45,13 +46,12 @@
 	</div>
 
 	<div class="flex-auto">
-		<h1 class="my-2 text-blue-400">{basename(selectedFilePath)}</h1>
-		
+		<h1 class="my-2 text-blue-400">{basename(selectedFile.path)}</h1>
 	</div>
 
 	<button
 		on:click={compress}
-		class="w-full rounded-lg bg-blue-600 p-2 text-white hover:bg-blue-700 active:scale-95"
+		class="w-full rounded-lg bg-blue-600 p-2 text-white transition-transform hover:bg-blue-700 active:scale-95"
 	>
 		Compress
 	</button>

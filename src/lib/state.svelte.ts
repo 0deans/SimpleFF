@@ -18,3 +18,4 @@ const createFileStore = () => {
 };
 
 export const files = createFileStore();
+export const selectedFile = writable<File | null>(null);

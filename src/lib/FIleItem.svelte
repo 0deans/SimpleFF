@@ -4,7 +4,8 @@
 	import { basename, cn, formatFileSize } from './utils';
 	import { writable } from 'svelte/store';
 	import { createProgress, melt } from '@melt-ui/svelte';
-	import { files } from './state.svelte';
+	import { files, selectedFile } from './state.svelte';
+	import { goto } from '$app/navigation';
 	import type { File } from './types';
 
 	export let file: File;
@@ -33,6 +34,11 @@
 	const showInFolder = async () => {
 		await invoke('show_in_folder', { path: file.outputPath });
 	};
+
+	const goNext = async () => {
+		selectedFile.set(file);
+		goto('/continue');
+	};
 </script>
 
 <div class="rounded-lg border-2 border-gray-300 p-2">
@@ -56,27 +62,24 @@
 					{#if file.isDone}
 						<button
 							on:click={showInFolder}
-							class="rounded-md bg-gray-100 p-0.5 text-orange-500 hover:bg-gray-200 hover:text-orange-700"
+							class="rounded-md bg-gray-100 p-0.5 text-orange-500 transition-transform hover:bg-gray-200 hover:text-orange-700 active:scale-95"
 						>
 							<Icon icon="bx:bx-folder-open" class="size-5" />
 						</button>
 					{/if}
-					<!-- svelte-ignore a11y-no-static-element-interactions -->
-					<svelte:element
-						this={isCompressing ? 'button' : 'a'}
-						href={isCompressing ? null : `/${encodeURIComponent(file.path)}`}
-						on:click={isCompressing ? cancel : null}
+					<button
+						on:click={isCompressing ? cancel : goNext}
 						class={cn(
-							'rounded-md bg-gray-100 px-2 font-medium text-blue-500 hover:bg-gray-200 hover:text-blue-700',
+							'rounded-md bg-gray-100 px-2 font-medium text-blue-500 transition-transform hover:bg-gray-200 hover:text-blue-700 active:scale-95',
 							isCompressing && 'bg-red-500 text-white hover:bg-red-600 hover:text-white'
 						)}
 					>
 						{isCompressing ? 'cancel' : 'continue'}
-					</svelte:element>
+					</button>
 					<button
 						on:click={() => files.remove(file.path)}
 						disabled={isCompressing}
-						class="rounded-md bg-gray-100 p-0.5 text-red-500 enabled:hover:bg-gray-200 enabled:hover:text-red-700 disabled:opacity-50"
+						class="rounded-md bg-gray-100 p-0.5 text-red-500 transition-transform enabled:hover:bg-gray-200 enabled:hover:text-red-700 enabled:active:scale-95 disabled:opacity-50"
 					>
 						<Icon icon="bxs:trash" class="size-5" />
 					</button>
