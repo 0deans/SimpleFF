@@ -7,8 +7,10 @@
 	import '../app.css';
 	import { onDestroy } from 'svelte';
 	import { files } from '$lib/state.svelte';
+	import { invoke } from '@tauri-apps/api/core';
 
 	export let data: PageData;
+	let showWarning = false;
 
 	interface CompressProgress {
 		filePath: string;
@@ -25,8 +27,15 @@
 		});
 	});
 
+	const unlisten2 = listen('close-requested', () => {
+		showWarning = true;
+	});
+
+	const closeApp = () => invoke('close_request');
+
 	onDestroy(async () => {
 		(await unlisten)();
+		(await unlisten2)();
 	});
 </script>
 
@@ -75,5 +84,30 @@
 		</div>
 	{:else}
 		<slot />
+
+		{#if showWarning}
+			<div
+				class="fixed inset-0 flex items-center justify-center bg-gray-900/50 p-4 backdrop-blur-sm"
+			>
+				<div class="rounded-lg bg-white p-4 shadow-lg">
+					<h2 class="font-semibold text-red-500">Warning</h2>
+					<p class="text-gray-600">
+						You have ongoing compressions. Closing the app will cancel all processes. Are you sure
+						you want to close the app?
+					</p>
+					<div class="mt-4 flex justify-end space-x-2">
+						<button on:click={closeApp} class="rounded-md bg-red-500 px-2 py-1 text-white">
+							Yes, Cancel & Close
+						</button>
+						<button
+							on:click={() => (showWarning = false)}
+							class="rounded-md bg-gray-300 px-2 py-1 text-black"
+						>
+							No, Keep Running
+						</button>
+					</div>
+				</div>
+			</div>
+		{/if}
 	{/if}
 </div>

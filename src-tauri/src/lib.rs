@@ -135,6 +135,19 @@ fn show_in_folder(path: String) {
     }
 }
 
+#[tauri::command]
+fn close_request(app: AppHandle, state: State<'_, Mutex<AppState>>) {
+    let state = state.lock().unwrap();
+    for (output_path, child) in state.ffmpeg_processes.iter() {
+        child.kill().expect("failed to kill child");
+        thread::sleep(std::time::Duration::from_secs(1));
+        if fs::metadata(output_path).is_ok() {
+            fs::remove_file(output_path).unwrap();
+        }
+    }
+    app.exit(0);
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -144,24 +157,22 @@ pub fn run() {
             compress,
             cancel_compress,
             get_file_size,
-            show_in_folder
+            show_in_folder,
+            close_request
         ])
         .setup(|app| {
             app.manage(Mutex::new(AppState::default()));
             Ok(())
         })
         .on_window_event(|window, event| match event {
-            WindowEvent::CloseRequested { .. } => {
+            WindowEvent::CloseRequested { api, .. } => {
                 let app_handle = window.app_handle();
                 let state = app_handle.state::<Mutex<AppState>>();
-
                 let state = state.lock().unwrap();
-                for (output_path, child) in state.ffmpeg_processes.iter() {
-                    child.kill().expect("failed to kill child");
-                    thread::sleep(std::time::Duration::from_secs(1));
-                    if fs::metadata(output_path).is_ok() {
-                        fs::remove_file(output_path).unwrap();
-                    }
+
+                if !state.ffmpeg_processes.is_empty() {
+                    api.prevent_close();
+                    app_handle.emit("close-requested", ()).unwrap();
                 }
             }
             _ => {}
