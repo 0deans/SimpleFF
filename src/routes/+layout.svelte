@@ -21,10 +21,9 @@
 	const appWindow = getCurrentWebviewWindow();
 	const unlisten = listen<string>('compress:progress', (event) => {
 		const data = JSON.parse(event.payload) as CompressProgressPayload;
-		files.update((files) => {
-			const file = files.find((f) => f.path === data.filePath);
-			if (file) file.progress = data.percentage;
-			return files;
+		files.updateFile(data.filePath, (file) => {
+			file.progress = data.percentage;
+			return file;
 		});
 	});
 

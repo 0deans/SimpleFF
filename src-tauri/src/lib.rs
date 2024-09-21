@@ -3,7 +3,7 @@ use shared_child::SharedChild;
 use std::{
     collections::HashMap,
     fs,
-    io::{BufRead, BufReader},
+    io::{BufRead, BufReader, Read},
     os::windows::process::CommandExt,
     process::{Command, Stdio},
     sync::{Arc, Mutex},
@@ -19,13 +19,13 @@ struct AppState {
 }
 
 #[tauri::command]
-fn is_ffmpeg_available() -> bool {
+fn is_ffmpeg_available() -> Result<bool, String> {
     Command::new("ffmpeg")
         .arg("-version")
         .creation_flags(utils::CREATE_NO_WINDOW)
         .output()
         .map(|output| output.status.success())
-        .unwrap_or(false)
+        .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -34,7 +34,7 @@ async fn compress(
     output_path: String,
     app: AppHandle,
     app_state: State<'_, Mutex<AppState>>,
-) -> Result<bool, ()> {
+) -> Result<bool, String> {
     let state = app_state.lock().unwrap();
     if state.ffmpeg_processes.contains_key(&output_path) {
         return Ok(false);
@@ -59,18 +59,22 @@ async fn compress(
             "26",
             "-progress",
             "pipe:1",
+            "-loglevel",
+            "error",
             &output_path,
         ])
         .creation_flags(utils::CREATE_NO_WINDOW)
-        .stdout(Stdio::piped());
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped());
 
     let shared_child = SharedChild::spawn(&mut command).unwrap();
     let child_arc = Arc::new(shared_child);
 
     let stdout = child_arc.take_stdout().unwrap();
-    let reader = BufReader::new(stdout);
+    let stderr = child_arc.take_stderr().unwrap();
 
     thread::spawn(move || {
+        let reader = BufReader::new(stdout);
         for line in reader.lines() {
             if let Ok(line) = line {
                 if line.starts_with("out_time=") {
@@ -88,6 +92,10 @@ async fn compress(
         }
     });
 
+    let mut error = String::new();
+    let mut reader = BufReader::new(stderr);
+    reader.read_to_string(&mut error).unwrap();
+
     let mut state = app_state.lock().unwrap();
     state
         .ffmpeg_processes
@@ -98,6 +106,10 @@ async fn compress(
     let mut state = app_state.lock().unwrap();
     state.ffmpeg_processes.remove(&output_path);
 
+    if !error.is_empty() {
+        return Err(error);
+    }
+
     Ok(exit_status.success())
 }
 
@@ -105,34 +117,39 @@ async fn compress(
 async fn cancel_compress(
     output_path: String,
     state: State<'_, Mutex<AppState>>,
-) -> Result<bool, ()> {
-    let mut state = state.lock().unwrap();
+) -> Result<bool, String> {
+    let mut state = state.lock().map_err(|_| "Failed to lock state")?;
     if let Some(child) = state.ffmpeg_processes.remove(&output_path) {
-        child.kill().expect("failed to kill child");
+        if let Err(e) = child.kill() {
+            return Err(format!("Failed to kill child: {}", e));
+        }
+
         thread::sleep(std::time::Duration::from_secs(1));
         if fs::metadata(&output_path).is_ok() {
-            fs::remove_file(&output_path).unwrap();
+            fs::remove_file(&output_path).map_err(|e| e.to_string())?;
         }
     }
     Ok(true)
 }
 
 #[tauri::command]
-fn get_file_size(path: String) -> Result<u64, ()> {
+fn get_file_size(path: String) -> Result<u64, String> {
     fs::metadata(path)
         .map(|metadata| metadata.len())
-        .map_err(|_| ())
+        .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-fn show_in_folder(path: String) {
+fn show_in_folder(path: String) -> Result<(), String> {
     #[cfg(target_os = "windows")]
     {
-        let _ = Command::new("explorer")
+        Command::new("explorer")
             .args(["/select,", &path]) // comma is important
             .creation_flags(utils::CREATE_NO_WINDOW)
-            .spawn();
+            .spawn()
+            .map_err(|e| e.to_string())?;
     }
+    Ok(())
 }
 
 #[tauri::command]

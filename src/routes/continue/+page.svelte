@@ -57,27 +57,31 @@
 	const compress = async () => {
 		const outputPath = `${outputDirname}\\${filename}.${$selectedExtension!.value}`;
 
-		files.update((files) => {
-			const file = files.find((f) => f.path === selectedFile.path);
-			if (file) {
-				file.outputPath = outputPath;
-				file.progress = 0;
-				file.isDone = false;
-			}
-			return files;
+		files.updateFile(selectedFile.path, (file) => {
+			file.outputPath = outputPath;
+			file.progress = 0;
+			file.isDone = false;
+			return file;
 		});
 
 		invoke<boolean>('compress', {
 			inputPath: selectedFile.path,
 			outputPath: outputPath
-		}).then((success) => {
-			if (!success) return;
-			files.update((files) => {
-				const file = files.find((f) => f.path === selectedFile.path);
-				if (file) file.isDone = true;
-				return files;
+		})
+			.then((success) => {
+				if (!success) return;
+				files.updateFile(selectedFile.path, (file) => {
+					file.isDone = true;
+					return file;
+				});
+			})
+			.catch((e) => {
+				console.error(e);
+				files.updateFile(selectedFile.path, (file) => {
+					file.outputPath = undefined;
+					return file;
+				});
 			});
-		});
 
 		goto('/', { replaceState: true });
 	};
@@ -98,7 +102,7 @@
 			<div class="flex flex-col">
 				<label use:melt={$root} for="output-path">Output path</label>
 				<div class="flex justify-between rounded-md border-2 border-gray-200">
-					<p class="scroll-hidden w-full overflow-hidden whitespace-nowrap p-2">{outputDirname}</p>
+					<p class="scroll-hidden w-full overflow-x-auto whitespace-nowrap p-2">{outputDirname}</p>
 					<button
 						on:click={selectOutputFolder}
 						class="group p-2 text-blue-500 outline-blue-200 hover:bg-gray-200 hover:text-blue-700"

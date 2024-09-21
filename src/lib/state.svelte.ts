@@ -11,10 +11,20 @@ const createFileStore = () => {
 			return Array.from(filesMap.values());
 		});
 
+	const updateFile = (path: string, updateFn: (file: File) => File) =>
+		update((oldFiles) => {
+			return oldFiles.map((file) => {
+				if (file.path === path) {
+					return updateFn(file);
+				}
+				return file;
+			});
+		});
+
 	const remove = (path: string) =>
 		update((oldFiles) => oldFiles.filter((file) => file.path !== path));
 
-	return { subscribe, update, add, remove };
+	return { subscribe, update, add, updateFile, remove };
 };
 
 export const files = createFileStore();
