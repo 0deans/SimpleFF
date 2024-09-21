@@ -6,9 +6,27 @@ export const cn = (...inputs: ClassValue[]) => {
 	return twMerge(clsx(...inputs));
 };
 
-export const basename = (path: string) => {
+export const basename = (path: string, removeExtension = false) => {
 	const parts = path.split(/[\\/]/);
-	return parts[parts.length - 1];
+	let base = parts[parts.length - 1];
+	if (removeExtension) {
+		const lastDotIndex = base.lastIndexOf('.');
+		if (lastDotIndex !== -1) {
+			base = base.substring(0, lastDotIndex);
+		}
+	}
+	return base;
+};
+
+export const getFileExtension = (path: string) => {
+	const lastDotIndex = path.lastIndexOf('.');
+	if (lastDotIndex === -1) return '';
+	return path.substring(lastDotIndex + 1);
+};
+
+export const dirname = (path: string) => {
+	const parts = path.split(/[\\/]/);
+	return parts.slice(0, parts.length - 1).join('\\');
 };
 
 export const formatFileSize = (bytes: number) => {

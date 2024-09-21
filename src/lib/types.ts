@@ -4,3 +4,8 @@ export interface File {
 	progress: number;
 	isDone: boolean;
 }
+
+export interface CompressProgressPayload {
+	filePath: string;
+	percentage: number;
+}

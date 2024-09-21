@@ -8,18 +8,19 @@
 	import { onDestroy } from 'svelte';
 	import { files } from '$lib/state.svelte';
 	import { invoke } from '@tauri-apps/api/core';
+	import type { CompressProgressPayload } from '$lib/types';
+	import { melt, createDialog } from '@melt-ui/svelte';
 
 	export let data: PageData;
-	let showWarning = false;
 
-	interface CompressProgress {
-		filePath: string;
-		percentage: number;
-	}
+	const {
+		elements: { overlay, content, title, description, close },
+		states: { open }
+	} = createDialog({ role: 'alertdialog', forceVisible: true });
 
 	const appWindow = getCurrentWebviewWindow();
 	const unlisten = listen<string>('compress:progress', (event) => {
-		const data = JSON.parse(event.payload) as CompressProgress;
+		const data = JSON.parse(event.payload) as CompressProgressPayload;
 		files.update((files) => {
 			const file = files.find((f) => f.path === data.filePath);
 			if (file) file.progress = data.percentage;
@@ -28,7 +29,7 @@
 	});
 
 	const unlisten2 = listen('close-requested', () => {
-		showWarning = true;
+		open.set(true);
 	});
 
 	const closeApp = () => invoke('close_request');
@@ -39,7 +40,7 @@
 	});
 </script>
 
-<div class="flex size-full flex-col overflow-hidden rounded-lg bg-white">
+<div class="relative flex size-full flex-col overflow-hidden rounded-lg bg-white">
 	<!-- svelte-ignore a11y-no-static-element-interactions -->
 	<div
 		on:mousedown={(e) => {
@@ -79,35 +80,50 @@
 			<button
 				on:click={() => invalidateAll()}
 				class="rounded-md border border-blue-500 px-4 py-2 text-blue-500 hover:bg-blue-500 hover:text-white active:scale-95"
-				>Retry</button
 			>
+				Retry
+			</button>
 		</div>
 	{:else}
 		<slot />
+	{/if}
 
-		{#if showWarning}
+	{#if $open}
+		<div>
+			<div use:melt={$overlay} class="absolute inset-0 z-50 bg-black/50" />
 			<div
-				class="fixed inset-0 flex items-center justify-center bg-gray-900/50 p-4 backdrop-blur-sm"
+				use:melt={$content}
+				class="absolute left-1/2 top-1/2 z-50 max-h-[85vh] w-[90vw] -translate-x-1/2 -translate-y-1/2 rounded-lg bg-white p-4 shadow-lg"
 			>
-				<div class="rounded-lg bg-white p-4 shadow-lg">
-					<h2 class="font-semibold text-red-500">Warning</h2>
-					<p class="text-gray-600">
-						You have ongoing compressions. Closing the app will cancel all processes. Are you sure
-						you want to close the app?
-					</p>
-					<div class="mt-4 flex justify-end space-x-2">
-						<button on:click={closeApp} class="rounded-md bg-red-500 px-2 py-1 text-white">
-							Yes, Cancel & Close
-						</button>
-						<button
-							on:click={() => (showWarning = false)}
-							class="rounded-md bg-gray-300 px-2 py-1 text-black"
-						>
-							No, Keep Running
-						</button>
-					</div>
+				<h2 use:melt={$title} class="text-lg font-medium text-red-600">Warning</h2>
+				<p use:melt={$description} class="mb-5 mt-2 leading-normal text-zinc-600">
+					You have ongoing compressions. Closing the app will cancel all processes. Are you sure you
+					want to close the app?
+				</p>
+
+				<div class="mt-6 flex justify-end space-x-4">
+					<button
+						use:melt={$close}
+						class="inline-flex rounded-md bg-zinc-100 px-4 font-medium text-zinc-600"
+					>
+						No, Keep Open
+					</button>
+					<button
+						on:click={closeApp}
+						class="inline-flex rounded-md bg-red-100 px-4 font-medium text-red-600"
+					>
+						Yes, Cancel & Close
+					</button>
 				</div>
+
+				<button
+					use:melt={$close}
+					aria-label="close"
+					class="absolute right-4 top-4 appearance-none rounded-md hover:bg-gray-100"
+				>
+					<Icon icon="mdi:close" class="size-6" />
+				</button>
 			</div>
-		{/if}
+		</div>
 	{/if}
 </div>

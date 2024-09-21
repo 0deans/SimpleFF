@@ -2,6 +2,16 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer utilities {
+	.scroll-hidden {
+		scrollbar-width: none;
+	}
+
+	.scroll-hidden::-webkit-scrollbar {
+		display: none;
+	}
+}
+
 html,
 body {
 	@apply size-full;
