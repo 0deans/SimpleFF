@@ -6,7 +6,9 @@
 	import { invoke } from '@tauri-apps/api/core';
 	import type { PageData } from './$types';
 	import { open } from '@tauri-apps/plugin-dialog';
-	import { melt, createSelect, createLabel } from '@melt-ui/svelte';
+	import { melt, createLabel } from '@melt-ui/svelte';
+	import type { SelectOption } from '$lib/types';
+	import Select from '$lib/Select.svelte';
 
 	export let data: PageData;
 	const { selectedFile } = data;
@@ -16,7 +18,37 @@
 	let extension = getFileExtension(selectedFile.path);
 	let isValid = true;
 
-	const extensions = [
+	const audioCodecs: SelectOption[] = [
+		{ value: 'aac', label: 'AAC' },
+		{ value: 'mp3', label: 'MP3' },
+		{ value: 'ac3', label: 'AC-3' },
+		{ value: 'alac', label: 'ALAC' },
+		{ value: 'opus', label: 'Opus' },
+		{ value: 'pcm', label: 'PCM' },
+		{ value: 'vorbis', label: 'Vorbis' },
+		{ value: 'dts', label: 'DTS' },
+		{ value: 'flac', label: 'FLAC' },
+		{ value: 'mp2', label: 'MP2' },
+		{ value: 'mp1', label: 'MP1' }
+	];
+
+	const videoCodecs: SelectOption[] = [
+		{ value: 'h264', label: 'H.264 (AVC)' },
+		{ value: 'h265', label: 'H.265 (HEVC)' },
+		{ value: 'vp9', label: 'VP9' },
+		{ value: 'av1', label: 'AV1' },
+		{ value: 'mpeg4', label: 'MPEG-4 Part 2' },
+		{ value: 'prores', label: 'ProRes' },
+		{ value: 'xvid', label: 'Xvid' },
+		{ value: 'divx', label: 'DivX' },
+		{ value: 'mjpeg', label: 'MJPEG' },
+		{ value: 'h263', label: 'H.263' },
+		{ value: 'mpeg2', label: 'MPEG-2' },
+		{ value: 'mpeg1', label: 'MPEG-1' },
+		{ value: 'theora', label: 'Theora' }
+	];
+
+	const extensions: SelectOption[] = [
 		{ value: 'mp4', label: 'MP4' },
 		{ value: 'mkv', label: 'MKV' },
 		{ value: 'avi', label: 'AVI' },
@@ -26,24 +58,14 @@
 		{ value: 'mpeg', label: 'MPEG' },
 		{ value: 'ogv', label: 'OGV' }
 	];
-	const defaultExtension = extensions.find((ext) => ext.value === extension);
+
+	let selectedExtension = extensions.find((ext) => ext.value === extension) || extensions[0];
+	let selectedVideoCodec = videoCodecs[0];
+	let selectedAudioCodec = audioCodecs[0];
 
 	const {
 		elements: { root }
 	} = createLabel();
-
-	const {
-		elements: { trigger, menu, option, label: selectLabel },
-		states: { open: extensionSelectOpen, selected: selectedExtension },
-		helpers: { isSelected }
-	} = createSelect<string>({
-		forceVisible: true,
-		defaultSelected: defaultExtension ?? extensions[0],
-		positioning: {
-			placement: 'bottom',
-			sameWidth: true
-		}
-	});
 
 	const selectOutputFolder = async () => {
 		const selected = await open({
@@ -55,7 +77,7 @@
 	};
 
 	const compress = async () => {
-		const outputPath = `${outputDirname}\\${filename}.${$selectedExtension!.value}`;
+		const outputPath = `${outputDirname}\\${filename}.${selectedExtension.value}`;
 
 		files.updateFile(selectedFile.path, (file) => {
 			file.outputPath = outputPath;
@@ -95,84 +117,73 @@
 		<span>Return</span>
 	</div>
 
-	<div class="flex-auto">
-		<h1 class="my-2 text-blue-400">{basename(selectedFile.path)}</h1>
+	<div class="my-2 space-y-4 overflow-y-auto">
+		<h1 class="text-blue-400">{basename(selectedFile.path)}</h1>
 
-		<div class="space-y-4">
-			<div class="flex flex-col">
-				<label use:melt={$root} for="output-path">Output path</label>
-				<div class="flex justify-between rounded-md border-2 border-gray-200">
-					<p class="scroll-hidden w-full overflow-x-auto whitespace-nowrap p-2">{outputDirname}</p>
-					<button
-						on:click={selectOutputFolder}
-						class="group p-2 text-blue-500 outline-blue-200 hover:bg-gray-200 hover:text-blue-700"
-					>
-						<Icon
-							icon="material-symbols:folder"
-							class="size-6 transition-transform group-active:scale-95"
-						/>
-					</button>
-				</div>
-			</div>
-
-			<div class="flex space-x-2">
-				<div class="flex w-full flex-col">
-					<label use:melt={$root} for="filename">Output file name</label>
-					<input
-						bind:value={filename}
-						on:change={() => (isValid = filename.length > 0 && filename.length <= 200)}
-						type="text"
-						id="filename"
-						autocomplete="off"
-						class={cn(
-							'w-full rounded-md border-2 border-gray-200 p-2 outline-blue-200',
-							!isValid && 'border-red-500'
-						)}
+		<div class="flex flex-col">
+			<label use:melt={$root} for="output-path">Output path</label>
+			<div class="flex justify-between rounded-md border-2 border-gray-200">
+				<p class="scroll-hidden w-full overflow-x-auto whitespace-nowrap p-2">{outputDirname}</p>
+				<button
+					on:click={selectOutputFolder}
+					class="group p-2 text-blue-500 outline-blue-200 hover:bg-gray-200 hover:text-blue-700"
+				>
+					<Icon
+						icon="material-symbols:folder"
+						class="size-6 transition-transform group-active:scale-95"
 					/>
-					<p class={cn('text-red-400', isValid && 'invisible')}>Must be 1-200 characters long</p>
-				</div>
-
-				<div class="flex flex-col">
-					<!-- svelte-ignore a11y-label-has-associated-control -->
-					<label use:melt={$selectLabel} class="group block">Extension</label>
-					<button
-						use:melt={$trigger}
-						class="flex w-24 items-center justify-between rounded-md border-2 border-gray-200 p-2 px-3 outline-blue-200"
-					>
-						{$selectedExtension?.label}
-						<Icon icon="mdi:chevron-down" class="size-6" />
-					</button>
-					{#if $extensionSelectOpen}
-						<div
-							use:melt={$menu}
-							class="scroll-hidden z-10 flex max-h-[100px] flex-col overflow-y-auto rounded-lg border-2 border-gray-300 bg-white p-1 shadow focus:!ring-0"
-						>
-							{#each extensions as { value, label }}
-								<div
-									use:melt={$option({ value: value, label: label })}
-									class="relative cursor-pointer rounded-lg py-1 pl-8 text-gray-600 hover:bg-blue-100 focus:z-10 focus:text-gray-800"
-								>
-									{#if $isSelected(value)}
-										<Icon
-											icon="mdi:check"
-											class="absolute left-2 top-1/2 size-4 -translate-y-1/2 text-blue-500"
-										/>
-									{/if}
-									{label}
-								</div>
-							{/each}
-						</div>
-					{/if}
-				</div>
+				</button>
 			</div>
 		</div>
-	</div>
 
-	<button
-		on:click={compress}
-		disabled={!isValid}
-		class="w-full rounded-lg bg-blue-600 p-2 text-white transition-transform enabled:hover:bg-blue-700 enabled:active:scale-95 disabled:opacity-60"
-	>
-		Compress
-	</button>
+		<div class="flex space-x-2">
+			<div class="flex w-full flex-col">
+				<label use:melt={$root} for="filename">Output file name</label>
+				<input
+					bind:value={filename}
+					on:change={() => (isValid = filename.length > 0 && filename.length <= 200)}
+					type="text"
+					id="filename"
+					autocomplete="off"
+					class={cn(
+						'w-full rounded-md border-2 border-gray-200 p-2 outline-blue-200',
+						!isValid && 'border-red-500'
+					)}
+				/>
+				<p class={cn('text-red-400', isValid && 'hidden')}>Must be 1-200 characters long</p>
+			</div>
+			<Select
+				options={extensions}
+				defaultSelected={selectedExtension}
+				label="Extension"
+				on:select={(e) => (selectedExtension = e.detail)}
+				className="w-1/2"
+			/>
+		</div>
+
+		<div class="flex space-x-2">
+			<Select
+				options={videoCodecs}
+				defaultSelected={selectedVideoCodec}
+				label="Video Codec"
+				on:select={(e) => (selectedVideoCodec = e.detail)}
+				className="w-1/2"
+			/>
+			<Select
+				options={audioCodecs}
+				defaultSelected={selectedAudioCodec}
+				label="Audio Codec"
+				on:select={(e) => (selectedAudioCodec = e.detail)}
+				className="w-1/2"
+			/>
+		</div>
+
+		<button
+			on:click={compress}
+			disabled={!isValid}
+			class="w-full rounded-lg bg-blue-600 p-2 text-white transition-transform enabled:hover:bg-blue-700 enabled:active:scale-95 disabled:opacity-60"
+		>
+			Process
+		</button>
+	</div>
 </main>
