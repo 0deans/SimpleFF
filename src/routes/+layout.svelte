@@ -89,7 +89,7 @@
 
 	{#if $open}
 		<div>
-			<div use:melt={$overlay} class="absolute inset-0 z-50 bg-black/50" />
+			<div use:melt={$overlay} class="absolute inset-0 z-50 bg-black/50"></div>
 			<div
 				use:melt={$content}
 				class="absolute left-1/2 top-1/2 z-50 max-h-[85vh] w-[90vw] -translate-x-1/2 -translate-y-1/2 rounded-lg bg-white p-4 shadow-lg"

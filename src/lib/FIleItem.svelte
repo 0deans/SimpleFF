@@ -92,7 +92,7 @@
 			<div
 				class="size-full bg-blue-500 transition-transform duration-700 ease-[cubic-bezier(0.65,0,0.35,1)]"
 				style={`transform: translateX(-${100 - (100 * ($progress ?? 0)) / ($max ?? 1)}%)`}
-			/>
+			></div>
 		</div>
 	{/if}
 </div>
