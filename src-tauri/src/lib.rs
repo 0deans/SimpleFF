@@ -92,9 +92,14 @@ async fn compress(
         }
     });
 
-    let mut error = String::new();
-    let mut reader = BufReader::new(stderr);
-    reader.read_to_string(&mut error).unwrap();
+    let error = Arc::new(Mutex::new(String::new()));
+    let error_clone = error.clone();
+
+    thread::spawn(move || {
+        let mut error = error_clone.lock().unwrap();
+        let mut reader = BufReader::new(stderr);
+        reader.read_to_string(&mut *error).unwrap();
+    });
 
     let mut state = app_state.lock().unwrap();
     state
@@ -106,8 +111,9 @@ async fn compress(
     let mut state = app_state.lock().unwrap();
     state.ffmpeg_processes.remove(&output_path);
 
+    let error = error.lock().unwrap();
     if !error.is_empty() {
-        return Err(error);
+        return Err(error.clone());
     }
 
     Ok(exit_status.success())

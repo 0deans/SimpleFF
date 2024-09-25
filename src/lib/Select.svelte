@@ -1,16 +1,24 @@
 <script lang="ts">
-	import { createEventDispatcher } from 'svelte';
 	import Icon from '@iconify/svelte';
 	import { melt, createSelect } from '@melt-ui/svelte';
-	import type { SelectOption } from './types';
 	import { cn } from './utils';
+	import type { SelectOption } from './types';
 
-	export let label: string = 'Select an option';
-	export let options: SelectOption[];
-	export let defaultSelected: SelectOption | undefined = undefined;
-	export let className: string = '';
+	interface Props {
+		label?: string;
+		options: SelectOption[];
+		defaultSelected?: SelectOption;
+		onSelect: (option: SelectOption) => void;
+		className?: string;
+	}
 
-	const dispatch = createEventDispatcher<{ select: SelectOption }>();
+	let {
+		label = 'Select an option',
+		options,
+		defaultSelected,
+		onSelect,
+		className = ''
+	}: Props = $props();
 
 	const {
 		elements: { trigger, menu, option, label: labelElement },
@@ -25,13 +33,14 @@
 		}
 	});
 
-	$: if ($selected) {
-		dispatch('select', $selected);
-	}
+	$effect(() => {
+		if (!$selected) return;
+		onSelect($selected);
+	});
 </script>
 
 <div class={cn('flex flex-col', className)}>
-	<!-- svelte-ignore a11y-label-has-associated-control -->
+	<!-- svelte-ignore a11y_label_has_associated_control -->
 	<label use:melt={$labelElement}>{label}</label>
 	<button
 		use:melt={$trigger}

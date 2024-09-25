@@ -2,21 +2,20 @@
 	import Icon from '@iconify/svelte';
 	import { invoke } from '@tauri-apps/api/core';
 	import { basename, cn, formatFileSize } from './utils';
-	import { writable } from 'svelte/store';
 	import { createProgress, melt } from '@melt-ui/svelte';
-	import { files, selectedFile } from './state.svelte';
+	import { fileStore, selectedFile } from './state.svelte';
 	import { goto } from '$app/navigation';
 	import type { File } from './types';
+	import { writable } from 'svelte/store';
 
-	export let file: File;
-	$: fileName = basename(file.path);
-	$: isCompressing = !!file.outputPath && !file.isDone;
-	$: progress = writable(file.progress);
+	let { file }: { file: File } = $props();
+	let fileName = $derived(basename(file.path));
+	let isCompressing = $derived(!!file.outputPath && !file.isDone);
 
 	const {
 		elements: { root },
 		options: { max }
-	} = createProgress({ value: progress, max: 100 });
+	} = createProgress({ value: writable(file.progress), max: 100 });
 
 	const get_file_size = async () => {
 		return await invoke<number>('get_file_size', { path: file.path });
@@ -24,11 +23,8 @@
 
 	const cancel = async () => {
 		await invoke('cancel_compress', { outputPath: file.outputPath });
-		files.update((files) => {
-			const f = files.find((f) => f.path === file.path);
-			if (f) f.outputPath = undefined;
-			return files;
-		});
+		file.outputPath = undefined;
+		file.isDone = false;
 	};
 
 	const showInFolder = async () => {
@@ -51,7 +47,7 @@
 					{#await get_file_size() then size}
 						{formatFileSize(size)}
 						<span class={cn(!isCompressing && 'hidden')}>
-							| {$progress.toFixed(0)}%
+							| {file.progress.toFixed(0)}%
 						</span>
 						{#if file.isDone}
 							<span class="text-green-400">&#183; Done</span>
@@ -61,14 +57,14 @@
 				<div class="flex items-center space-x-2">
 					{#if file.isDone}
 						<button
-							on:click={showInFolder}
+							onclick={showInFolder}
 							class="rounded-md bg-gray-100 p-0.5 text-orange-500 transition-transform hover:bg-gray-200 hover:text-orange-700 active:scale-95"
 						>
 							<Icon icon="bx:bx-folder-open" class="size-5" />
 						</button>
 					{/if}
 					<button
-						on:click={isCompressing ? cancel : goNext}
+						onclick={isCompressing ? cancel : goNext}
 						class={cn(
 							'rounded-md bg-gray-100 px-2 font-medium text-blue-500 transition-transform hover:bg-gray-200 hover:text-blue-700 active:scale-95',
 							isCompressing && 'bg-red-500 text-white hover:bg-red-600 hover:text-white'
@@ -77,7 +73,7 @@
 						{isCompressing ? 'cancel' : 'continue'}
 					</button>
 					<button
-						on:click={() => files.remove(file.path)}
+						onclick={() => fileStore.remove(file.path)}
 						disabled={isCompressing}
 						class="rounded-md bg-gray-100 p-0.5 text-red-500 transition-transform enabled:hover:bg-gray-200 enabled:hover:text-red-700 enabled:active:scale-95 disabled:opacity-50"
 					>
@@ -91,7 +87,7 @@
 		<div use:melt={$root} class="mt-2 h-1 w-full overflow-hidden rounded-full bg-gray-200">
 			<div
 				class="size-full bg-blue-500 transition-transform duration-700 ease-[cubic-bezier(0.65,0,0.35,1)]"
-				style={`transform: translateX(-${100 - (100 * ($progress ?? 0)) / ($max ?? 1)}%)`}
+				style={`transform: translateX(-${100 - (100 * (file.progress ?? 0)) / ($max ?? 1)}%)`}
 			></div>
 		</div>
 	{/if}

@@ -1,67 +1,42 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { files } from '$lib/state.svelte';
 	import { basename, cn, dirname, getFileExtension } from '$lib/utils';
 	import Icon from '@iconify/svelte';
 	import { invoke } from '@tauri-apps/api/core';
 	import type { PageData } from './$types';
 	import { open } from '@tauri-apps/plugin-dialog';
 	import { melt, createLabel } from '@melt-ui/svelte';
-	import type { SelectOption } from '$lib/types';
 	import Select from '$lib/Select.svelte';
+	import { fileStore } from '$lib/state.svelte';
+	import {
+		audioCodecOptions,
+		extensionOptions,
+		formatCodecs,
+		videoCodecOptions
+	} from '$lib/constants';
 
-	export let data: PageData;
+	let { data }: { data: PageData } = $props();
 	const { selectedFile } = data;
 
-	let outputDirname = dirname(selectedFile.path);
-	let filename = `${basename(selectedFile.path, true)}_compressed`;
+	let outputDirname = $state(dirname(selectedFile.path));
+	let filename = $state(`${basename(selectedFile.path, true)}_compressed`);
 	let extension = getFileExtension(selectedFile.path);
-	let isValid = true;
+	let isValid = $state(true);
 
-	const audioCodecs: SelectOption[] = [
-		{ value: 'aac', label: 'AAC' },
-		{ value: 'mp3', label: 'MP3' },
-		{ value: 'ac3', label: 'AC-3' },
-		{ value: 'alac', label: 'ALAC' },
-		{ value: 'opus', label: 'Opus' },
-		{ value: 'pcm', label: 'PCM' },
-		{ value: 'vorbis', label: 'Vorbis' },
-		{ value: 'dts', label: 'DTS' },
-		{ value: 'flac', label: 'FLAC' },
-		{ value: 'mp2', label: 'MP2' },
-		{ value: 'mp1', label: 'MP1' }
-	];
+	let matchingExtension = extensionOptions.find((ext) => ext.value === extension);
+	let selectedExtension = $state(matchingExtension || extensionOptions[0]);
 
-	const videoCodecs: SelectOption[] = [
-		{ value: 'h264', label: 'H.264 (AVC)' },
-		{ value: 'h265', label: 'H.265 (HEVC)' },
-		{ value: 'vp9', label: 'VP9' },
-		{ value: 'av1', label: 'AV1' },
-		{ value: 'mpeg4', label: 'MPEG-4 Part 2' },
-		{ value: 'prores', label: 'ProRes' },
-		{ value: 'xvid', label: 'Xvid' },
-		{ value: 'divx', label: 'DivX' },
-		{ value: 'mjpeg', label: 'MJPEG' },
-		{ value: 'h263', label: 'H.263' },
-		{ value: 'mpeg2', label: 'MPEG-2' },
-		{ value: 'mpeg1', label: 'MPEG-1' },
-		{ value: 'theora', label: 'Theora' }
-	];
+	let codecs = $derived.by(() => {
+		const codecs = formatCodecs[selectedExtension.value];
 
-	const extensions: SelectOption[] = [
-		{ value: 'mp4', label: 'MP4' },
-		{ value: 'mkv', label: 'MKV' },
-		{ value: 'avi', label: 'AVI' },
-		{ value: 'mov', label: 'MOV' },
-		{ value: 'webm', label: 'WEBM' },
-		{ value: 'mpg', label: 'MPG' },
-		{ value: 'mpeg', label: 'MPEG' },
-		{ value: 'ogv', label: 'OGV' }
-	];
+		const video = videoCodecOptions.filter((codec) => codecs.video.includes(codec.value));
+		const audio = audioCodecOptions.filter((codec) => codecs.audio.includes(codec.value));
 
-	let selectedExtension = extensions.find((ext) => ext.value === extension) || extensions[0];
-	let selectedVideoCodec = videoCodecs[0];
-	let selectedAudioCodec = audioCodecs[0];
+		return { video, audio };
+	});
+
+	let selectedVideoCodec = $state(videoCodecOptions[0]);
+	let selectedAudioCodec = $state(audioCodecOptions[0]);
 
 	const {
 		elements: { root }
@@ -79,7 +54,7 @@
 	const compress = async () => {
 		const outputPath = `${outputDirname}\\${filename}.${selectedExtension.value}`;
 
-		files.updateFile(selectedFile.path, (file) => {
+		fileStore.update(selectedFile.path, (file) => {
 			file.outputPath = outputPath;
 			file.progress = 0;
 			file.isDone = false;
@@ -92,14 +67,14 @@
 		})
 			.then((success) => {
 				if (!success) return;
-				files.updateFile(selectedFile.path, (file) => {
+				fileStore.update(selectedFile.path, (file) => {
 					file.isDone = true;
 					return file;
 				});
 			})
 			.catch((e) => {
 				console.error(e);
-				files.updateFile(selectedFile.path, (file) => {
+				fileStore.update(selectedFile.path, (file) => {
 					file.outputPath = undefined;
 					return file;
 				});
@@ -125,7 +100,7 @@
 			<div class="flex justify-between rounded-md border-2 border-gray-200">
 				<p class="scroll-hidden w-full overflow-x-auto whitespace-nowrap p-2">{outputDirname}</p>
 				<button
-					on:click={selectOutputFolder}
+					onclick={selectOutputFolder}
 					class="group p-2 text-blue-500 outline-blue-200 hover:bg-gray-200 hover:text-blue-700"
 				>
 					<Icon
@@ -141,7 +116,7 @@
 				<label use:melt={$root} for="filename">Output file name</label>
 				<input
 					bind:value={filename}
-					on:change={() => (isValid = filename.length > 0 && filename.length <= 200)}
+					onchange={() => (isValid = filename.length > 0 && filename.length <= 200)}
 					type="text"
 					id="filename"
 					autocomplete="off"
@@ -153,33 +128,33 @@
 				<p class={cn('text-red-400', isValid && 'hidden')}>Must be 1-200 characters long</p>
 			</div>
 			<Select
-				options={extensions}
+				options={extensionOptions}
 				defaultSelected={selectedExtension}
 				label="Extension"
-				on:select={(e) => (selectedExtension = e.detail)}
+				onSelect={(option) => (selectedExtension = option)}
 				className="w-1/2"
 			/>
 		</div>
 
 		<div class="flex space-x-2">
 			<Select
-				options={videoCodecs}
+				options={codecs.video}
 				defaultSelected={selectedVideoCodec}
 				label="Video Codec"
-				on:select={(e) => (selectedVideoCodec = e.detail)}
+				onSelect={(option) => (selectedVideoCodec = option)}
 				className="w-1/2"
 			/>
 			<Select
-				options={audioCodecs}
+				options={codecs.audio}
 				defaultSelected={selectedAudioCodec}
 				label="Audio Codec"
-				on:select={(e) => (selectedAudioCodec = e.detail)}
+				onSelect={(option) => (selectedAudioCodec = option)}
 				className="w-1/2"
 			/>
 		</div>
 
 		<button
-			on:click={compress}
+			onclick={compress}
 			disabled={!isValid}
 			class="w-full rounded-lg bg-blue-600 p-2 text-white transition-transform enabled:hover:bg-blue-700 enabled:active:scale-95 disabled:opacity-60"
 		>

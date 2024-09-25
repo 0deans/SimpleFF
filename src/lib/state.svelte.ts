@@ -2,30 +2,34 @@ import { writable } from 'svelte/store';
 import type { File } from './types';
 
 const createFileStore = () => {
-	const { subscribe, update } = writable<File[]>([]);
+	const files = $state<File[]>([]);
 
-	const add = (newFiles: File[]) =>
-		update((oldFiles) => {
-			const filesMap = new Map(oldFiles.map((file) => [file.path, file]));
-			newFiles.forEach((file) => filesMap.set(file.path, file));
-			return Array.from(filesMap.values());
-		});
+	const add = (file: File) => {
+		if (files.some((f) => f.path === file.path)) return;
+		files.push(file);
+	};
 
-	const updateFile = (path: string, updateFn: (file: File) => File) =>
-		update((oldFiles) => {
-			return oldFiles.map((file) => {
-				if (file.path === path) {
-					return updateFn(file);
-				}
-				return file;
-			});
-		});
+	const update = (path: string, updateFn: (file: File) => File) => {
+		const index = files.findIndex((f) => f.path === path);
+		if (index === -1) return;
+		files[index] = updateFn(files[index]);
+	};
 
-	const remove = (path: string) =>
-		update((oldFiles) => oldFiles.filter((file) => file.path !== path));
+	const remove = (path: string) => {
+		const index = files.findIndex((f) => f.path === path);
+		if (index === -1) return;
+		files.splice(index, 1);
+	};
 
-	return { subscribe, update, add, updateFile, remove };
+	return {
+		get files() {
+			return files;
+		},
+		add,
+		update,
+		remove
+	};
 };
 
-export const files = createFileStore();
+export const fileStore = createFileStore();
 export const selectedFile = writable<File | null>(null);

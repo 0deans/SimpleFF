@@ -1,36 +1,43 @@
 <script lang="ts">
 	import { listen } from '@tauri-apps/api/event';
-	import { onDestroy } from 'svelte';
+	import type { Snippet } from 'svelte';
 
-	export let onDrop: (paths: string[]) => void;
-
-	let root: HTMLElement | null;
-	let isDragging = false;
-
+	interface Props {
+		children: Snippet<[
+			{ isDragging: boolean }
+		]>;
+		onDrop: (paths: string[]) => void;
+	}
 	type PositionPayload = { position: { x: number; y: number } };
 	type PathsPayload = { paths: string[] };
 
-	const dragOver = listen<PositionPayload>('tauri://drag-over', (e) => {
-		const position = e.payload.position;
-		const hoveredElement = document.elementFromPoint(position.x, position.y);
-		isDragging = !!root && root.contains(hoveredElement);
-	});
+	let { onDrop, children }: Props = $props();
+	let root: HTMLElement | null;
+	let isDragging = $state(false);
 
-	const dragDrop = listen<PositionPayload & PathsPayload>('tauri://drag-drop', (e) => {
-		const position = e.payload.position;
-		const hoveredElement = document.elementFromPoint(position.x, position.y);
-		if (root && root.contains(hoveredElement)) {
-			isDragging = false;
-			onDrop(e.payload.paths);
-		}
-	});
+	$effect(() => {
+		const dragOver = listen<PositionPayload>('tauri://drag-over', (e) => {
+			const position = e.payload.position;
+			const hoveredElement = document.elementFromPoint(position.x, position.y);
+			isDragging = !!root && root.contains(hoveredElement);
+		});
 
-	onDestroy(async () => {
-		(await dragOver)();
-		(await dragDrop)();
+		const dragDrop = listen<PositionPayload & PathsPayload>('tauri://drag-drop', (e) => {
+			const position = e.payload.position;
+			const hoveredElement = document.elementFromPoint(position.x, position.y);
+			if (root && root.contains(hoveredElement)) {
+				isDragging = false;
+				onDrop(e.payload.paths);
+			}
+		});
+
+		return async () => {
+			(await dragOver)();
+			(await dragDrop)();
+		};
 	});
 </script>
 
 <div bind:this={root}>
-	<slot {isDragging} />
+	{@render children({isDragging})}
 </div>

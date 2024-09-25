@@ -5,8 +5,7 @@
 	import { open } from '@tauri-apps/plugin-dialog';
 	import FileDropZone from '$lib/FileDropZone.svelte';
 	import FileItem from '$lib/FileItem.svelte';
-	import { files } from '$lib/state.svelte';
-	import type { File } from '$lib/types';
+	import { fileStore } from '$lib/state.svelte';
 
 	const {
 		elements: { root, content, viewport, scrollbarY, thumbY }
@@ -25,39 +24,39 @@
 		});
 
 		if (newPaths === null) return;
-		const newFiles = newPaths.map<File>((path) => ({ path, progress: 0, isDone: false }));
-		files.add(newFiles);
+		newPaths.forEach((path) => fileStore.add({ path, progress: 0, isDone: false }));
 	};
 
 	const handleDrop = (paths: string[]) => {
-		const newFiles = paths.map<File>((path) => ({ path, progress: 0, isDone: false }));
-		files.add(newFiles);
+		paths.forEach((path) => fileStore.add({ path, progress: 0, isDone: false }));
 	};
 </script>
 
 <main use:melt={$root} class="size-full overflow-hidden">
 	<div use:melt={$viewport} class="size-full">
 		<div use:melt={$content} class="!block p-3">
-			<FileDropZone let:isDragging onDrop={handleDrop}>
-				<div
-					class={cn(
-						'flex h-36 flex-col items-center justify-center space-y-2 rounded-lg border border-green-400 bg-green-400/10',
-						{ 'bg-green-400/20': isDragging }
-					)}
-				>
-					<Icon icon="mingcute:file-upload-fill" class="size-8 text-green-700" />
-					<span class="font-medium">Drag & drop your files here or</span>
-					<button
-						on:click={handleSelect}
-						class="rounded-md bg-gray-400/50 px-4 py-2 font-medium transition hover:bg-gray-400/70 active:scale-95"
+			<FileDropZone onDrop={handleDrop}>
+				{#snippet children({isDragging})}
+					<div
+						class={cn(
+							'flex h-36 flex-col items-center justify-center space-y-2 rounded-lg border border-green-400 bg-green-400/10',
+							{ 'bg-green-400/20': isDragging }
+						)}
 					>
-						Choose files
-					</button>
-				</div>
+						<Icon icon="mingcute:file-upload-fill" class="size-8 text-green-700" />
+						<span class="font-medium">Drag & drop your files here or</span>
+						<button
+							on:click={handleSelect}
+							class="rounded-md bg-gray-400/50 px-4 py-2 font-medium transition hover:bg-gray-400/70 active:scale-95"
+						>
+							Choose files
+						</button>
+					</div>
+				{/snippet}
 			</FileDropZone>
 			<p class="mt-2 text-sm font-medium text-gray-600">Only video files are supported.</p>
 
-			{#if $files.length === 0}
+			{#if fileStore.files.length === 0}
 				<div class="mt-20 flex items-center justify-center text-xl">
 					<Icon icon="twemoji:melting-face" />
 					There are no files
@@ -66,7 +65,7 @@
 			{:else}
 				<h2 class="mt-2 text-lg font-medium">Selected Files</h2>
 				<div class="mt-2 space-y-2">
-					{#each $files as file (file.path)}
+					{#each fileStore.files as file (file.path)}
 						<FileItem {file} />
 					{/each}
 				</div>

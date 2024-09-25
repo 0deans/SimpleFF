@@ -5,44 +5,52 @@
 	import type { PageData } from './$types';
 	import Icon from '@iconify/svelte';
 	import '../app.css';
-	import { onDestroy } from 'svelte';
-	import { files } from '$lib/state.svelte';
 	import { invoke } from '@tauri-apps/api/core';
 	import type { CompressProgressPayload } from '$lib/types';
 	import { melt, createDialog } from '@melt-ui/svelte';
+	import { fileStore } from '$lib/state.svelte';
+	import type { Snippet } from 'svelte';
 
-	export let data: PageData;
+	interface Props {
+		data: PageData;
+		children: Snippet;
+	}
+
+	let { data, children }: Props = $props();
 
 	const {
 		elements: { overlay, content, title, description, close },
 		states: { open }
 	} = createDialog({ role: 'alertdialog', forceVisible: true });
 
-	const appWindow = getCurrentWebviewWindow();
-	const unlisten = listen<string>('compress:progress', (event) => {
-		const data = JSON.parse(event.payload) as CompressProgressPayload;
-		files.updateFile(data.filePath, (file) => {
-			file.progress = data.percentage;
-			return file;
+	$effect(() => {
+		const compressProgress = listen<string>('compress:progress', (event) => {
+			const data = JSON.parse(event.payload) as CompressProgressPayload;
+
+			fileStore.update(data.filePath, (file) => {
+				file.progress = data.percentage;
+				return file;
+			});
 		});
+
+		const closeRequested = listen('close-requested', () => {
+			open.set(true);
+		});
+
+		return async () => {
+			(await compressProgress)();
+			(await closeRequested)();
+		};
 	});
 
-	const unlisten2 = listen('close-requested', () => {
-		open.set(true);
-	});
-
+	const appWindow = getCurrentWebviewWindow();
 	const closeApp = () => invoke('close_request');
-
-	onDestroy(async () => {
-		(await unlisten)();
-		(await unlisten2)();
-	});
 </script>
 
 <div class="relative flex size-full flex-col overflow-hidden rounded-lg bg-white">
-	<!-- svelte-ignore a11y-no-static-element-interactions -->
+	<!-- svelte-ignore a11y_no_static_element_interactions -->
 	<div
-		on:mousedown={(e) => {
+		onmousedown={(e) => {
 			if (e.buttons !== 1) return;
 			appWindow.startDragging();
 		}}
@@ -54,15 +62,15 @@
 		</div>
 		<div class="flex items-center">
 			<button
-				on:mousedown|stopPropagation
-				on:click={() => appWindow.minimize()}
+				onmousedown={(e) => e.stopPropagation()}
+				onclick={() => appWindow.minimize()}
 				class="p-2 hover:bg-gray-200"
 			>
 				<Icon icon="mdi:minimize" class="cursor-pointer" />
 			</button>
 			<button
-				on:mousedown|stopPropagation
-				on:click={() => appWindow.close()}
+				onmousedown={(e) => e.stopPropagation()}
+				onclick={() => appWindow.close()}
 				class="p-2 hover:bg-red-500"
 			>
 				<Icon icon="mdi:close" class="cursor-pointer" />
@@ -77,14 +85,14 @@
 			<Icon icon="material-symbols:error" width={48} height={48} />
 			<p>FFmpeg is not available. Please ensure it is installed and accessible.</p>
 			<button
-				on:click={() => invalidateAll()}
+				onclick={() => invalidateAll()}
 				class="rounded-md border border-blue-500 px-4 py-2 text-blue-500 hover:bg-blue-500 hover:text-white active:scale-95"
 			>
 				Retry
 			</button>
 		</div>
 	{:else}
-		<slot />
+		{@render children()}
 	{/if}
 
 	{#if $open}
@@ -108,7 +116,7 @@
 						No, Keep Open
 					</button>
 					<button
-						on:click={closeApp}
+						onclick={closeApp}
 						class="inline-flex rounded-md bg-red-100 px-4 font-medium text-red-600"
 					>
 						Yes, Cancel & Close
