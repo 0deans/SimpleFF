@@ -36,7 +36,7 @@
 	<div use:melt={$viewport} class="size-full">
 		<div use:melt={$content} class="!block p-3">
 			<FileDropZone onDrop={handleDrop}>
-				{#snippet children({isDragging})}
+				{#snippet children({ isDragging })}
 					<div
 						class={cn(
 							'flex h-36 flex-col items-center justify-center space-y-2 rounded-lg border border-green-400 bg-green-400/10',

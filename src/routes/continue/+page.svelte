@@ -14,29 +14,41 @@
 		formatCodecs,
 		videoCodecOptions
 	} from '$lib/constants';
+	import { untrack } from 'svelte';
 
 	let { data }: { data: PageData } = $props();
 	const { selectedFile } = data;
 
-	let outputDirname = $state(dirname(selectedFile.path));
-	let filename = $state(`${basename(selectedFile.path, true)}_compressed`);
-	let extension = getFileExtension(selectedFile.path);
-	let isValid = $state(true);
-
-	let matchingExtension = extensionOptions.find((ext) => ext.value === extension);
-	let selectedExtension = $state(matchingExtension || extensionOptions[0]);
-
-	let codecs = $derived.by(() => {
-		const codecs = formatCodecs[selectedExtension.value];
-
-		const video = videoCodecOptions.filter((codec) => codecs.video.includes(codec.value));
-		const audio = audioCodecOptions.filter((codec) => codecs.audio.includes(codec.value));
-
-		return { video, audio };
+	let matchingExtension = extensionOptions.find((ext) => {
+		return ext.value === getFileExtension(selectedFile.path);
 	});
 
-	let selectedVideoCodec = $state(videoCodecOptions[0]);
-	let selectedAudioCodec = $state(audioCodecOptions[0]);
+	let outputDirname = $state(dirname(selectedFile.path));
+	let filename = $state(`${basename(selectedFile.path, true)}_compressed`);
+	let extension = $state(matchingExtension || extensionOptions[0]);
+	let isFilenameValid = $state(true);
+
+	let codecOptions = $derived.by(() => {
+		const { video, audio } = formatCodecs[extension.value];
+
+		return {
+			video: videoCodecOptions.filter(({ value }) => video.includes(value)),
+			audio: audioCodecOptions.filter(({ value }) => audio.includes(value))
+		};
+	});
+
+	let videoCodec = $state(untrack(() => codecOptions.video[0]));
+	let audioCodec = $state(untrack(() => codecOptions.audio[0]));
+
+	$effect(() => {
+		const isAvailable = codecOptions.video.some(({ value }) => value === videoCodec.value);
+		if (!isAvailable) videoCodec = codecOptions.video[0];
+	});
+
+	$effect(() => {
+		const isAvailable = codecOptions.audio.some(({ value }) => value === audioCodec.value);
+		if (!isAvailable) audioCodec = codecOptions.audio[0];
+	});
 
 	const {
 		elements: { root }
@@ -52,7 +64,7 @@
 	};
 
 	const compress = async () => {
-		const outputPath = `${outputDirname}\\${filename}.${selectedExtension.value}`;
+		const outputPath = `${outputDirname}\\${filename}.${extension.value}`;
 
 		fileStore.update(selectedFile.path, (file) => {
 			file.outputPath = outputPath;
@@ -116,46 +128,43 @@
 				<label use:melt={$root} for="filename">Output file name</label>
 				<input
 					bind:value={filename}
-					onchange={() => (isValid = filename.length > 0 && filename.length <= 200)}
+					onchange={() => (isFilenameValid = filename.length > 0 && filename.length <= 200)}
 					type="text"
 					id="filename"
 					autocomplete="off"
 					class={cn(
 						'w-full rounded-md border-2 border-gray-200 p-2 outline-blue-200',
-						!isValid && 'border-red-500'
+						!isFilenameValid && 'border-red-500'
 					)}
 				/>
-				<p class={cn('text-red-400', isValid && 'hidden')}>Must be 1-200 characters long</p>
+				<p class={cn('text-red-400', isFilenameValid && 'hidden')}>Must be 1-200 characters long</p>
 			</div>
 			<Select
 				options={extensionOptions}
-				defaultSelected={selectedExtension}
+				bind:selected={extension}
 				label="Extension"
-				onSelect={(option) => (selectedExtension = option)}
 				className="w-1/2"
 			/>
 		</div>
 
 		<div class="flex space-x-2">
 			<Select
-				options={codecs.video}
-				defaultSelected={selectedVideoCodec}
+				options={codecOptions.video}
+				bind:selected={videoCodec}
 				label="Video Codec"
-				onSelect={(option) => (selectedVideoCodec = option)}
 				className="w-1/2"
 			/>
 			<Select
-				options={codecs.audio}
-				defaultSelected={selectedAudioCodec}
+				options={codecOptions.audio}
+				bind:selected={audioCodec}
 				label="Audio Codec"
-				onSelect={(option) => (selectedAudioCodec = option)}
 				className="w-1/2"
 			/>
 		</div>
 
 		<button
 			onclick={compress}
-			disabled={!isValid}
+			disabled={!isFilenameValid}
 			class="w-full rounded-lg bg-blue-600 p-2 text-white transition-transform enabled:hover:bg-blue-700 enabled:active:scale-95 disabled:opacity-60"
 		>
 			Process

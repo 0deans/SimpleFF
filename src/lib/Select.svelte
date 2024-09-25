@@ -7,35 +7,34 @@
 	interface Props {
 		label?: string;
 		options: SelectOption[];
-		defaultSelected?: SelectOption;
-		onSelect: (option: SelectOption) => void;
+		selected: SelectOption;
 		className?: string;
 	}
 
 	let {
 		label = 'Select an option',
 		options,
-		defaultSelected,
-		onSelect,
+		selected = $bindable(),
 		className = ''
 	}: Props = $props();
 
 	const {
 		elements: { trigger, menu, option, label: labelElement },
-		states: { open, selected },
+		states: { open, selected: localSelected },
 		helpers: { isSelected }
 	} = createSelect({
 		forceVisible: true,
-		defaultSelected,
+		defaultSelected: selected,
 		positioning: {
 			placement: 'bottom',
 			sameWidth: true
 		}
 	});
 
+	$effect(() => localSelected.set(selected));
 	$effect(() => {
-		if (!$selected) return;
-		onSelect($selected);
+		if (!$localSelected) return;
+		selected = $localSelected;
 	});
 </script>
 
@@ -46,7 +45,7 @@
 		use:melt={$trigger}
 		class="flex items-center justify-between rounded-md border-2 border-gray-200 px-3 py-2 outline-blue-200"
 	>
-		{$selected?.label || 'Select...'}
+		{$localSelected?.label || 'Select...'}
 		<Icon icon="bi:chevron-down" class="size-4" />
 	</button>
 	{#if $open}

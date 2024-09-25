@@ -9,7 +9,6 @@
 	import { writable } from 'svelte/store';
 
 	let { file }: { file: File } = $props();
-	let fileName = $derived(basename(file.path));
 	let isCompressing = $derived(!!file.outputPath && !file.isDone);
 
 	const {
@@ -41,7 +40,7 @@
 	<div class="flex items-center space-x-2">
 		<Icon icon="lets-icons:video-fill" class="size-8 text-gray-500" />
 		<div class="w-full">
-			<p class="break-all text-sm font-semibold">{fileName}</p>
+			<p class="break-all text-sm font-semibold">{basename(file.path)}</p>
 			<div class="mt-0.5 flex items-center justify-between">
 				<span class="text-sm text-gray-400">
 					{#await get_file_size() then size}
