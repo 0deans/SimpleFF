@@ -5,7 +5,7 @@
 	import { invoke } from '@tauri-apps/api/core';
 	import type { PageData } from './$types';
 	import { open } from '@tauri-apps/plugin-dialog';
-	import { melt, createLabel } from '@melt-ui/svelte';
+	import { melt, createLabel, createScrollArea } from '@melt-ui/svelte';
 	import Select from '$lib/Select.svelte';
 	import { fileStore } from '$lib/state.svelte';
 	import {
@@ -54,6 +54,16 @@
 		elements: { root }
 	} = createLabel();
 
+	const {
+		elements: {
+			root: scrollRoot,
+			content: scrollContent,
+			viewport: scrollViewport,
+			scrollbarY,
+			thumbY
+		}
+	} = createScrollArea();
+
 	const selectOutputFolder = async () => {
 		const selected = await open({
 			directory: true,
@@ -96,78 +106,94 @@
 	};
 </script>
 
-<main class="flex size-full flex-col p-3">
-	<div class="flex items-center space-x-2">
+<main class="flex size-full flex-col">
+	<div class="flex items-center space-x-2 p-3 pb-0">
 		<a href="/" class="rounded-md p-1 hover:bg-gray-200">
 			<Icon icon="ep:back" class="size-6" />
 		</a>
 		<span>Return</span>
 	</div>
 
-	<div class="my-2 space-y-4 overflow-y-auto">
-		<h1 class="text-blue-400">{basename(selectedFile.path)}</h1>
+	<div class="h-0 flex-shrink-0 flex-grow basis-auto">
+		<div use:melt={$scrollRoot} class="size-full overflow-hidden">
+			<div use:melt={$scrollViewport} class="size-full">
+				<div use:melt={$scrollContent} class="space-y-4 p-3">
+					<h1 class="text-blue-400">{basename(selectedFile.path)}</h1>
 
-		<div class="flex flex-col">
-			<label use:melt={$root} for="output-path">Output path</label>
-			<div class="flex justify-between rounded-md border-2 border-gray-200">
-				<p class="scroll-hidden w-full overflow-x-auto whitespace-nowrap p-2">{outputDirname}</p>
-				<button
-					onclick={selectOutputFolder}
-					class="group p-2 text-blue-500 outline-blue-200 hover:bg-gray-200 hover:text-blue-700"
-				>
-					<Icon
-						icon="material-symbols:folder"
-						class="size-6 transition-transform group-active:scale-95"
-					/>
-				</button>
+					<div class="flex flex-col">
+						<label use:melt={$root} for="output-path">Output path</label>
+						<div class="flex justify-between rounded-md border-2 border-gray-200">
+							<p class="scroll-hidden w-full overflow-x-auto whitespace-nowrap p-2">
+								{outputDirname}
+							</p>
+							<button
+								onclick={selectOutputFolder}
+								class="group p-2 text-blue-500 outline-blue-200 hover:bg-gray-200 hover:text-blue-700"
+							>
+								<Icon
+									icon="material-symbols:folder"
+									class="size-6 transition-transform group-active:scale-95"
+								/>
+							</button>
+						</div>
+					</div>
+
+					<div class="flex space-x-2">
+						<div class="flex w-full flex-col">
+							<label use:melt={$root} for="filename">Output file name</label>
+							<input
+								bind:value={filename}
+								onchange={() => (isFilenameValid = filename.length > 0 && filename.length <= 200)}
+								type="text"
+								id="filename"
+								autocomplete="off"
+								class={cn(
+									'w-full rounded-md border-2 border-gray-200 p-2 outline-blue-200',
+									!isFilenameValid && 'border-red-500'
+								)}
+							/>
+							<p class={cn('text-red-400', isFilenameValid && 'hidden')}>
+								Must be 1-200 characters long
+							</p>
+						</div>
+						<Select
+							options={extensionOptions}
+							bind:selected={extension}
+							label="Extension"
+							className="w-1/2"
+						/>
+					</div>
+
+					<div class="flex space-x-2">
+						<Select
+							options={codecOptions.video}
+							bind:selected={videoCodec}
+							label="Video Codec"
+							className="w-1/2"
+						/>
+						<Select
+							options={codecOptions.audio}
+							bind:selected={audioCodec}
+							label="Audio Codec"
+							className="w-1/2"
+						/>
+					</div>
+				</div>
+			</div>
+			<div
+				use:melt={$scrollbarY}
+				class="flex h-full w-2 touch-none select-none border-l border-l-transparent bg-gray-900/10 p-px transition-colors"
+			>
+				<div use:melt={$thumbY} class="relative flex-1 rounded-full bg-gray-600"></div>
 			</div>
 		</div>
-
-		<div class="flex space-x-2">
-			<div class="flex w-full flex-col">
-				<label use:melt={$root} for="filename">Output file name</label>
-				<input
-					bind:value={filename}
-					onchange={() => (isFilenameValid = filename.length > 0 && filename.length <= 200)}
-					type="text"
-					id="filename"
-					autocomplete="off"
-					class={cn(
-						'w-full rounded-md border-2 border-gray-200 p-2 outline-blue-200',
-						!isFilenameValid && 'border-red-500'
-					)}
-				/>
-				<p class={cn('text-red-400', isFilenameValid && 'hidden')}>Must be 1-200 characters long</p>
-			</div>
-			<Select
-				options={extensionOptions}
-				bind:selected={extension}
-				label="Extension"
-				className="w-1/2"
-			/>
-		</div>
-
-		<div class="flex space-x-2">
-			<Select
-				options={codecOptions.video}
-				bind:selected={videoCodec}
-				label="Video Codec"
-				className="w-1/2"
-			/>
-			<Select
-				options={codecOptions.audio}
-				bind:selected={audioCodec}
-				label="Audio Codec"
-				className="w-1/2"
-			/>
-		</div>
-
-		<button
-			onclick={compress}
-			disabled={!isFilenameValid}
-			class="w-full rounded-lg bg-blue-600 p-2 text-white transition-transform enabled:hover:bg-blue-700 enabled:active:scale-95 disabled:opacity-60"
-		>
-			Process
-		</button>
 	</div>
+
+	<button
+		onclick={compress}
+		disabled={!isFilenameValid}
+		class="w-full bg-blue-600 p-2 text-white transition-transform enabled:hover:bg-blue-700 disabled:opacity-60"
+	>
+		Process
+	</button>
 </main>
