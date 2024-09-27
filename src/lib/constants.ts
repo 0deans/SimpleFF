@@ -5,10 +5,9 @@ export const audioCodecOptions: SelectOption[] = [
 	{ value: 'mp3', label: 'MP3' },
 	{ value: 'ac3', label: 'AC-3' },
 	{ value: 'alac', label: 'ALAC' },
-	{ value: 'opus', label: 'Opus' },
-	{ value: 'pcm', label: 'PCM' },
-	{ value: 'vorbis', label: 'Vorbis' },
-	{ value: 'dts', label: 'DTS' },
+	{ value: 'libopus', label: 'Opus (libopus)' },
+	{ value: 'pcm_s16le', label: 'pcm_s16le' },
+	{ value: 'libvorbis', label: 'Vorbis (libvorbis)' },
 	{ value: 'flac', label: 'FLAC' },
 	{ value: 'mp2', label: 'MP2' },
 	{ value: 'mp1', label: 'MP1' }
@@ -16,17 +15,16 @@ export const audioCodecOptions: SelectOption[] = [
 
 export const videoCodecOptions: SelectOption[] = [
 	{ value: 'h264', label: 'H.264 (AVC)' },
-	{ value: 'h265', label: 'H.265 (HEVC)' },
 	{ value: 'vp9', label: 'VP9' },
+	{ value: 'vp8', label: 'VP8' },
 	{ value: 'av1', label: 'AV1' },
 	{ value: 'mpeg4', label: 'MPEG-4 Part 2' },
 	{ value: 'prores', label: 'ProRes' },
-	{ value: 'xvid', label: 'Xvid' },
-	{ value: 'divx', label: 'DivX' },
+	{ value: 'libxvid', label: 'Xvid (libxvid)' },
 	{ value: 'mjpeg', label: 'MJPEG' },
-	{ value: 'h263', label: 'H.263' },
-	{ value: 'mpeg2', label: 'MPEG-2' },
-	{ value: 'mpeg1', label: 'MPEG-1' },
+	{ value: 'h263p', label: 'H.263+' },
+	{ value: 'mpeg2video', label: 'MPEG-2' },
+	{ value: 'mpeg1video', label: 'MPEG-1' },
 	{ value: 'theora', label: 'Theora' }
 ] as const;
 
@@ -45,49 +43,47 @@ export const formatCodecs: Readonly<
 	Record<string, { audio: ReadonlyArray<string>; video: ReadonlyArray<string> }>
 > = {
 	mp4: {
-		audio: ['aac', 'mp3', 'ac3', 'alac', 'opus', 'pcm'],
-		video: ['h264', 'h265', 'vp9', 'av1']
+		audio: ['aac', 'mp3', 'ac3', 'alac', 'opus', 'pcm_s16le'],
+		video: ['h264', 'vp9', 'av1']
 	},
 	mkv: {
-		audio: ['aac', 'mp3', 'ac3', 'alac', 'opus', 'pcm', 'vorbis', 'dts', 'flac'],
+		audio: ['aac', 'mp3', 'ac3', 'alac', 'opus', 'pcm_s16le', 'vorbis', 'flac'],
 		video: [
 			'h264',
-			'h265',
 			'vp9',
 			'av1',
 			'mpeg4',
 			'prores',
-			'xvid',
-			'divx',
+			'libxvid',
 			'mjpeg',
-			'h263',
-			'mpeg2',
-			'mpeg1',
+			'h263p',
+			'mpeg2video',
+			'mpeg1video',
 			'theora'
 		]
 	},
 	avi: {
-		audio: ['mp3', 'ac3', 'pcm'],
-		video: ['mpeg4', 'xvid', 'divx', 'mjpeg', 'h263', 'mpeg2', 'mpeg1']
+		audio: ['mp3', 'ac3', 'pcm_s16le'],
+		video: ['mpeg4', 'libxvid', 'mjpeg', 'h263p', 'mpeg2video', 'mpeg1video']
 	},
 	mov: {
-		audio: ['aac', 'alac', 'pcm'],
-		video: ['h264', 'prores', 'mpeg4', 'h263', 'mpeg2', 'mpeg1']
+		audio: ['aac', 'alac', 'pcm_s16le'],
+		video: ['h264', 'prores', 'mpeg4', 'h263p', 'mpeg2video', 'mpeg1video']
 	},
 	webm: {
-		audio: ['opus', 'vorbis'],
+		audio: ['libopus', 'libvorbis'],
 		video: ['vp9', 'vp8']
 	},
 	mpg: {
-		audio: ['mp2', 'mp3', 'ac3', 'pcm'],
-		video: ['mpeg1', 'mpeg2', 'mpeg4']
+		audio: ['mp2', 'mp3', 'ac3', 'pcm_s16le'],
+		video: ['mpeg1video', 'mpeg2video', 'mpeg4']
 	},
 	mpeg: {
-		audio: ['mp2', 'mp3', 'ac3', 'pcm'],
-		video: ['mpeg1', 'mpeg2', 'mpeg4']
+		audio: ['mp2', 'mp3', 'ac3', 'pcm_s16le'],
+		video: ['mpeg1video', 'mpeg2video', 'mpeg4']
 	},
 	ogv: {
-		audio: ['opus', 'vorbis'],
+		audio: ['libopus', 'libvorbis'],
 		video: ['theora']
 	}
 };

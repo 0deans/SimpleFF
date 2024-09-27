@@ -83,10 +83,14 @@
 			return file;
 		});
 
-		invoke<boolean>('compress', {
+		const params = {
 			inputPath: selectedFile.path,
-			outputPath: outputPath
-		})
+			outputPath: outputPath,
+			videoCodec: videoCodec.value,
+			audioCodec: audioCodec.value
+		};
+
+		invoke<boolean>('compress', { params })
 			.then((success) => {
 				if (!success) return;
 				fileStore.update(selectedFile.path, (file) => {

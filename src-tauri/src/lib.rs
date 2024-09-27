@@ -18,6 +18,15 @@ struct AppState {
     ffmpeg_processes: HashMap<String, Arc<SharedChild>>,
 }
 
+#[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct VideoParams {
+    input_path: String,
+    output_path: String,
+    audio_codec: Option<String>,
+    video_codec: Option<String>,
+}
+
 #[tauri::command]
 fn is_ffmpeg_available() -> Result<bool, String> {
     Command::new("ffmpeg")
@@ -30,42 +39,61 @@ fn is_ffmpeg_available() -> Result<bool, String> {
 
 #[tauri::command]
 async fn compress(
-    input_path: String,
-    output_path: String,
+    params: VideoParams,
     app: AppHandle,
     app_state: State<'_, Mutex<AppState>>,
 ) -> Result<bool, String> {
     let state = app_state.lock().unwrap();
-    if state.ffmpeg_processes.contains_key(&output_path) {
+    if state.ffmpeg_processes.contains_key(&params.output_path) {
         return Ok(false);
     }
     drop(state);
 
-    let duration = utils::get_video_duration(&input_path);
+    let duration = utils::get_video_duration(&params.input_path);
 
     let mut command = Command::new("ffmpeg");
+    command.arg("-y").arg("-i").arg(&params.input_path);
+
+    if let Some(video_codec) = params.video_codec {
+        command.arg("-c:v").arg(video_codec);
+    }
+
+    if let Some(audio_codec) = params.audio_codec {
+        command.arg("-c:a").arg(audio_codec);
+    }
+
     command
-        .args(&[
-            "-y",
-            "-i",
-            &input_path,
-            "-c:v",
-            "libx264",
-            "-c:a",
-            "aac",
-            "-b:a",
-            "128k",
-            "-crf",
-            "26",
-            "-progress",
-            "pipe:1",
-            "-loglevel",
-            "error",
-            &output_path,
-        ])
+        .arg("-progress")
+        .arg("pipe:1")
+        .arg("-loglevel")
+        .arg("error")
+        .arg(&params.output_path)
         .creation_flags(utils::CREATE_NO_WINDOW)
         .stdout(Stdio::piped())
         .stderr(Stdio::piped());
+
+    // command
+    //     .args(&[
+    //         "-y",
+    //         "-i",
+    //         &params.input_path,
+    //         "-c:v",
+    //         "libx264",
+    //         "-c:a",
+    //         "aac",
+    //         "-b:a",
+    //         "128k",
+    //         "-crf",
+    //         "26",
+    //         "-progress",
+    //         "pipe:1",
+    //         "-loglevel",
+    //         "error",
+    //         &params.output_path,
+    //     ])
+    //     .creation_flags(utils::CREATE_NO_WINDOW)
+    //     .stdout(Stdio::piped())
+    //     .stderr(Stdio::piped());
 
     let shared_child = SharedChild::spawn(&mut command).unwrap();
     let child_arc = Arc::new(shared_child);
@@ -81,7 +109,7 @@ async fn compress(
                     if let Some(out_time) = line.split('=').nth(1) {
                         if let Some(out_time) = utils::parse_time(out_time) {
                             let payload = json!({
-                                "filePath": input_path,
+                                "filePath": params.input_path,
                                 "percentage": (out_time / duration) * 100.0
                             });
                             app.emit("compress:progress", payload.to_string()).unwrap();
@@ -104,12 +132,12 @@ async fn compress(
     let mut state = app_state.lock().unwrap();
     state
         .ffmpeg_processes
-        .insert(output_path.clone(), child_arc.clone());
+        .insert(params.output_path.clone(), child_arc.clone());
     drop(state);
 
     let exit_status = child_arc.wait().unwrap();
     let mut state = app_state.lock().unwrap();
-    state.ffmpeg_processes.remove(&output_path);
+    state.ffmpeg_processes.remove(&params.output_path);
 
     let error = error.lock().unwrap();
     if !error.is_empty() {
@@ -181,7 +209,7 @@ pub fn run() {
             cancel_compress,
             get_file_size,
             show_in_folder,
-            close_request
+            close_request,
         ])
         .setup(|app| {
             app.manage(Mutex::new(AppState::default()));
