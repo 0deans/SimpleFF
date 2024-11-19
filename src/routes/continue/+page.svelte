@@ -186,7 +186,7 @@
 			</div>
 			<div
 				use:melt={$scrollbarY}
-				class="flex h-full w-2 touch-none select-none border-l border-l-transparent bg-gray-900/10 p-px transition-colors"
+				class="flex h-[95%] w-2 touch-none select-none border-l border-l-transparent bg-gray-900/10 p-px transition-colors rounded-full"
 			>
 				<div use:melt={$thumbY} class="relative flex-1 rounded-full bg-gray-600"></div>
 			</div>
