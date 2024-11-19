@@ -121,7 +121,7 @@
 	<div class="h-0 flex-shrink-0 flex-grow basis-auto">
 		<div use:melt={$scrollRoot} class="size-full overflow-hidden">
 			<div use:melt={$scrollViewport} class="size-full">
-				<div use:melt={$scrollContent} class="space-y-4 p-3">
+				<div use:melt={$scrollContent} class="!block space-y-4 p-3">
 					<h1 class="text-blue-400">{basename(selectedFile.path)}</h1>
 
 					<div class="flex flex-col">

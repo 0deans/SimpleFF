@@ -43,11 +43,11 @@ export const formatCodecs: Readonly<
 	Record<string, { audio: ReadonlyArray<string>; video: ReadonlyArray<string> }>
 > = {
 	mp4: {
-		audio: ['aac', 'mp3', 'ac3', 'alac', 'opus', 'pcm_s16le'],
+		audio: ['aac', 'mp3', 'ac3', 'alac', 'libopus', 'pcm_s16le'],
 		video: ['h264', 'vp9', 'av1']
 	},
 	mkv: {
-		audio: ['aac', 'mp3', 'ac3', 'alac', 'opus', 'pcm_s16le', 'vorbis', 'flac'],
+		audio: ['aac', 'mp3', 'ac3', 'alac', 'libopus', 'pcm_s16le', 'libvorbis', 'flac'],
 		video: [
 			'h264',
 			'vp9',
