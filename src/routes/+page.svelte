@@ -46,7 +46,7 @@
 						<Icon icon="mingcute:file-upload-fill" class="size-8 text-green-700" />
 						<span class="font-medium">Drag & drop your files here or</span>
 						<button
-							on:click={handleSelect}
+							onclick={handleSelect}
 							class="rounded-md bg-gray-400/50 px-4 py-2 font-medium transition hover:bg-gray-400/70 active:scale-95"
 						>
 							Choose files
