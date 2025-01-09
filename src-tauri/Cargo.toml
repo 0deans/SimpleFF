@@ -24,6 +24,9 @@ tauri = { version = "2", features = [] }
 tauri-plugin-dialog = "2"
 shared_child = "1.0.1"
 
+[target."cfg(target_os = \"macos\")".dependencies]
+cocoa = "0.26"
+
 [profile.dev]
 incremental = true # Compile your binary in smaller steps.
 

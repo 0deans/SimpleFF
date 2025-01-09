@@ -9,7 +9,13 @@ use std::{
     sync::{Arc, Mutex},
     thread,
 };
-use tauri::{AppHandle, Emitter, Manager, State, WindowEvent};
+use tauri::{
+    window::Color, AppHandle, Emitter, Manager, State, WebviewUrl, WebviewWindowBuilder,
+    WindowEvent,
+};
+
+#[cfg(target_os = "macos")]
+use tauri::utils::TitleBarStyle;
 
 pub mod utils;
 
@@ -71,29 +77,6 @@ async fn compress(
         .creation_flags(utils::CREATE_NO_WINDOW)
         .stdout(Stdio::piped())
         .stderr(Stdio::piped());
-
-    // command
-    //     .args(&[
-    //         "-y",
-    //         "-i",
-    //         &params.input_path,
-    //         "-c:v",
-    //         "libx264",
-    //         "-c:a",
-    //         "aac",
-    //         "-b:a",
-    //         "128k",
-    //         "-crf",
-    //         "26",
-    //         "-progress",
-    //         "pipe:1",
-    //         "-loglevel",
-    //         "error",
-    //         &params.output_path,
-    //     ])
-    //     .creation_flags(utils::CREATE_NO_WINDOW)
-    //     .stdout(Stdio::piped())
-    //     .stderr(Stdio::piped());
 
     let shared_child = SharedChild::spawn(&mut command).unwrap();
     let child_arc = Arc::new(shared_child);
@@ -199,7 +182,6 @@ fn close_request(app: AppHandle, state: State<'_, Mutex<AppState>>) {
     app.exit(0);
 }
 
-#[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
@@ -213,6 +195,34 @@ pub fn run() {
         ])
         .setup(|app| {
             app.manage(Mutex::new(AppState::default()));
+
+            let win_builder = WebviewWindowBuilder::new(app, "main", WebviewUrl::default())
+                .title("simpleff")
+                .inner_size(360.0, 420.0)
+                .resizable(false)
+                .fullscreen(false)
+                .decorations(false)
+                .shadow(false)
+                .transparent(true);
+
+            #[cfg(target_os = "macos")]
+            let win_builder = win_builder.title_bar_style(TitleBarStyle::Transparent);
+
+            #[allow(unused_variables)]
+            let window = win_builder.build().unwrap();
+
+            #[cfg(target_os = "macos")]
+            {
+                use cocoa::appkit::{NSColor, NSWindow};
+                use cocoa::base::{id, nil};
+
+                let ns_window = window.ns_window().unwrap() as id;
+                unsafe {
+                    let bg_color = NSColor::colorWithRed_green_blue_alpha_(nil, 1.0, 1.0, 1.0, 1.0);
+                    ns_window.setBackgroundColor_(bg_color);
+                }
+            }
+
             Ok(())
         })
         .on_window_event(|window, event| match event {

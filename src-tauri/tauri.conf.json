@@ -9,18 +9,7 @@
 		"beforeBuildCommand": "pnpm build"
 	},
 	"app": {
-		"windows": [
-			{
-				"title": "simpleff",
-				"width": 360,
-				"height": 420,
-				"resizable": false,
-				"fullscreen": false,
-				"decorations": false,
-				"shadow": false,
-				"transparent": true
-			}
-		],
+		"windows": [],
 		"security": {
 			"csp": null
 		}
