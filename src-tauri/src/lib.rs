@@ -9,10 +9,7 @@ use std::{
     sync::{Arc, Mutex},
     thread,
 };
-use tauri::{
-    window::Color, AppHandle, Emitter, Manager, State, WebviewUrl, WebviewWindowBuilder,
-    WindowEvent,
-};
+use tauri::{AppHandle, Emitter, Manager, State, WebviewUrl, WebviewWindowBuilder, WindowEvent};
 
 #[cfg(target_os = "macos")]
 use tauri::utils::TitleBarStyle;
