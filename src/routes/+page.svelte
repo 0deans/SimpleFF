@@ -4,8 +4,8 @@
 	import Icon from '@iconify/svelte';
 	import { open } from '@tauri-apps/plugin-dialog';
 	import FileDropZone from '$lib/FileDropZone.svelte';
-	import FileItem from '$lib/FileItem.svelte';
 	import { fileStore } from '$lib/state.svelte';
+	import FileListItem from '$lib/FileListItem.svelte';
 
 	const {
 		elements: { root, content, viewport, scrollbarY, thumbY }
@@ -66,7 +66,7 @@
 				<h2 class="mt-2 text-lg font-medium">Selected Files</h2>
 				<div class="mt-2 space-y-2">
 					{#each fileStore.files as file (file.path)}
-						<FileItem {file} />
+						<FileListItem {file} />
 					{/each}
 				</div>
 			{/if}
