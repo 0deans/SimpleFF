@@ -1,10 +1,10 @@
-use std::{os::windows::process::CommandExt, process::Command};
+use std::process::Command;
+
+#[cfg(target_os = "windows")]
+use std::os::windows::process::CommandExt;
 
 #[cfg(target_os = "windows")]
 pub const CREATE_NO_WINDOW: u32 = 0x08000000;
-
-#[cfg(not(target_os = "windows"))]
-pub const CREATE_NO_WINDOW: u32 = 0;
 
 pub fn get_video_duration(filepath: &String) -> f64 {
     let mut command = Command::new("ffprobe");

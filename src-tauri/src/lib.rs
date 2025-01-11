@@ -4,7 +4,6 @@ use std::{
     collections::HashMap,
     fs,
     io::{BufRead, BufReader, Read},
-    os::windows::process::CommandExt,
     process::{Command, Stdio},
     sync::{Arc, Mutex},
     thread,
@@ -13,6 +12,9 @@ use tauri::{AppHandle, Emitter, Manager, State, WebviewUrl, WebviewWindowBuilder
 
 #[cfg(target_os = "macos")]
 use tauri::utils::TitleBarStyle;
+
+#[cfg(target_os = "windows")]
+use std::os::windows::process::CommandExt;
 
 pub mod utils;
 
@@ -205,8 +207,10 @@ pub fn run() {
                 .resizable(false)
                 .fullscreen(false)
                 .decorations(false)
-                .shadow(false)
-                .transparent(true);
+                .shadow(false);
+
+            #[cfg(target_os = "windows")]
+            let win_builder = win_builder.transparent(true);
 
             #[cfg(target_os = "macos")]
             let win_builder = win_builder.title_bar_style(TitleBarStyle::Transparent);
