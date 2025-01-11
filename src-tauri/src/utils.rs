@@ -7,20 +7,21 @@ pub const CREATE_NO_WINDOW: u32 = 0x08000000;
 pub const CREATE_NO_WINDOW: u32 = 0;
 
 pub fn get_video_duration(filepath: &String) -> f64 {
-    let output = Command::new("ffprobe")
-        .args(&[
-            "-v",
-            "error",
-            "-show_entries",
-            "format=duration",
-            "-of",
-            "default=noprint_wrappers=1:nokey=1",
-            filepath,
-        ])
-        .creation_flags(0x08000000) // CREATE_NO_WINDOW
-        .output()
-        .expect("failed to execute process");
+    let mut command = Command::new("ffprobe");
+    command.args(&[
+        "-v",
+        "error",
+        "-show_entries",
+        "format=duration",
+        "-of",
+        "default=noprint_wrappers=1:nokey=1",
+        filepath,
+    ]);
 
+    #[cfg(target_os = "windows")]
+    command.creation_flags(CREATE_NO_WINDOW);
+
+    let output = command.output().expect("failed to execute process");
     let output_str = String::from_utf8_lossy(&output.stdout);
     let duration: f64 = output_str.trim().parse().unwrap();
     duration

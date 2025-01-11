@@ -32,9 +32,13 @@ struct VideoParams {
 
 #[tauri::command]
 fn is_ffmpeg_available() -> Result<bool, String> {
-    Command::new("ffmpeg")
-        .arg("-version")
-        .creation_flags(utils::CREATE_NO_WINDOW)
+    let mut command = Command::new("ffmpeg");
+    command.arg("-version");
+
+    #[cfg(target_os = "windows")]
+    command.creation_flags(utils::CREATE_NO_WINDOW);
+
+    command
         .output()
         .map(|output| output.status.success())
         .map_err(|e| e.to_string())
@@ -71,9 +75,11 @@ async fn compress(
         .arg("-loglevel")
         .arg("error")
         .arg(&params.output_path)
-        .creation_flags(utils::CREATE_NO_WINDOW)
         .stdout(Stdio::piped())
         .stderr(Stdio::piped());
+
+    #[cfg(target_os = "windows")]
+    command.creation_flags(utils::CREATE_NO_WINDOW);
 
     let shared_child = SharedChild::spawn(&mut command).unwrap();
     let child_arc = Arc::new(shared_child);
