@@ -4,7 +4,9 @@ import type { LayoutLoad } from './$types';
 export const prerender = true;
 export const ssr = false;
 
-export const load: LayoutLoad = async () => {
-	const isFFmpegAvailable = await invoke<boolean>('is_ffmpeg_available');
-	return { isFFmpegAvailable };
-};
+export const load: LayoutLoad = async () => ({
+	isFFmpegAvailable: await invoke<boolean>('is_ffmpeg_available').catch((error) => {
+		console.error(error);
+		return false;
+	})
+});

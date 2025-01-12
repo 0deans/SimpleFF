@@ -209,7 +209,7 @@ pub fn run() {
                 .decorations(false)
                 .shadow(false);
 
-            #[cfg(target_os = "windows")]
+            #[cfg(not(target_os = "macos"))]
             let win_builder = win_builder.transparent(true);
 
             #[cfg(target_os = "macos")]

@@ -10,6 +10,7 @@
 	import { melt, createDialog } from '@melt-ui/svelte';
 	import { fileStore } from '$lib/state.svelte';
 	import type { Snippet } from 'svelte';
+	import { dev } from '$app/environment';
 
 	interface Props {
 		data: PageData;
@@ -40,6 +41,31 @@
 		return async () => {
 			(await compressProgress)();
 			(await closeRequested)();
+		};
+	});
+
+	$effect(() => {
+		const handleKeyDown = (event: KeyboardEvent) => {
+			if (
+				event.key === 'F5' ||
+				(event.ctrlKey && event.key === 'r') ||
+				(event.metaKey && event.key === 'r')
+			) {
+				event.preventDefault();
+			}
+		};
+
+		const handleContextMenu = (event: MouseEvent) => {
+			if (dev) return;
+			event.preventDefault();
+		};
+
+		document.addEventListener('keydown', handleKeyDown);
+		document.addEventListener('contextmenu', handleContextMenu);
+
+		return () => {
+			document.removeEventListener('keydown', handleKeyDown);
+			document.removeEventListener('contextmenu', handleContextMenu);
 		};
 	});
 
