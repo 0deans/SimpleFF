@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 env:
-  APP_NAME: 'Sample Desktop App'
+  APP_NAME: 'SimpleFF App'
 
 jobs:
   changelog:
@@ -71,10 +71,10 @@ jobs:
           workspaces: './src-tauri -> target'
 
       - name: Install Ubuntu dependencies
-        if: matrix.platform == 'ubuntu-latest'
+        if: matrix.platform == 'ubuntu-22.04'
         run: |
-          sudo apt update
-          xargs sudo apt install -y < environment/apt_packages.txt
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
 
       - name: Install frontend dependencies
         run: |
