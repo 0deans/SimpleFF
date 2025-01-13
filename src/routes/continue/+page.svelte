@@ -14,7 +14,8 @@
 		formatCodecs,
 		videoCodecOptions
 	} from '$lib/constants';
-	import { untrack } from 'svelte';
+	// import { untrack } from 'svelte';
+	import type { SelectOption } from '$lib/types';
 
 	let { data }: { data: PageData } = $props();
 	const { selectedFile } = data;
@@ -37,18 +38,18 @@
 		};
 	});
 
-	let videoCodec = $state(untrack(() => codecOptions.video[0]));
-	let audioCodec = $state(untrack(() => codecOptions.audio[0]));
+	let videoCodec = $state<SelectOption | undefined>();
+	let audioCodec = $state<SelectOption | undefined>();
 
-	$effect(() => {
-		const isAvailable = codecOptions.video.some(({ value }) => value === videoCodec.value);
-		if (!isAvailable) videoCodec = codecOptions.video[0];
-	});
+	// $effect(() => {
+	// 	const isAvailable = codecOptions.video.some(({ value }) => value === videoCodec.value);
+	// 	if (!isAvailable) videoCodec = codecOptions.video[0];
+	// });
 
-	$effect(() => {
-		const isAvailable = codecOptions.audio.some(({ value }) => value === audioCodec.value);
-		if (!isAvailable) audioCodec = codecOptions.audio[0];
-	});
+	// $effect(() => {
+	// 	const isAvailable = codecOptions.audio.some(({ value }) => value === audioCodec.value);
+	// 	if (!isAvailable) audioCodec = codecOptions.audio[0];
+	// });
 
 	const {
 		elements: { root }
@@ -86,8 +87,8 @@
 		const params = {
 			inputPath: selectedFile.path,
 			outputPath: outputPath,
-			videoCodec: videoCodec.value,
-			audioCodec: audioCodec.value
+			videoCodec: videoCodec?.value,
+			audioCodec: audioCodec?.value
 		};
 
 		invoke<boolean>('compress', { params })
@@ -172,12 +173,14 @@
 						<Select
 							options={codecOptions.video}
 							bind:selected={videoCodec}
+							optional
 							label="Video Codec"
 							className="w-1/2"
 						/>
 						<Select
 							options={codecOptions.audio}
 							bind:selected={audioCodec}
+							optional
 							label="Audio Codec"
 							className="w-1/2"
 						/>
@@ -186,7 +189,7 @@
 			</div>
 			<div
 				use:melt={$scrollbarY}
-				class="flex h-[95%] w-2 touch-none select-none border-l border-l-transparent bg-gray-900/10 p-px transition-colors rounded-full"
+				class="flex h-[95%] w-2 touch-none select-none rounded-full border-l border-l-transparent bg-gray-900/10 p-px transition-colors"
 			>
 				<div use:melt={$thumbY} class="relative flex-1 rounded-full bg-gray-600"></div>
 			</div>

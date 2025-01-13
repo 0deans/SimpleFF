@@ -4,17 +4,29 @@
 	import { cn } from './utils';
 	import type { SelectOption } from './types';
 
-	interface Props {
+	interface BaseProps {
 		label?: string;
 		options: SelectOption[];
-		selected: SelectOption;
 		className?: string;
 	}
+
+	interface OptionalSelectProps extends BaseProps {
+		optional: true;
+		selected?: SelectOption;
+	}
+
+	interface RequiredSelectProps extends BaseProps {
+		optional?: false;
+		selected: SelectOption;
+	}
+
+	type Props = OptionalSelectProps | RequiredSelectProps;
 
 	let {
 		label = 'Select an option',
 		options,
 		selected = $bindable(),
+		optional,
 		className = ''
 	}: Props = $props();
 
@@ -36,6 +48,9 @@
 		if (!$localSelected) return;
 		selected = $localSelected;
 	});
+
+	const noneOption = { value: null, label: 'None' };
+	const optionsWithNone = optional ? [noneOption, ...options] : options;
 </script>
 
 <div class={cn('flex flex-col', className)}>
@@ -53,7 +68,7 @@
 			use:melt={$menu}
 			class="scroll-hidden z-10 flex max-h-[100px] flex-col overflow-y-auto rounded-lg border-2 border-gray-300 bg-white p-1 shadow focus:!ring-0"
 		>
-			{#each options as { value, label }}
+			{#each optionsWithNone as { value, label }}
 				<div
 					use:melt={$option({ value, label })}
 					class="relative cursor-pointer rounded-lg py-1 pl-8 text-gray-600 hover:bg-blue-100 focus:z-10 focus:text-gray-800 data-[highlighted]:bg-blue-100"
