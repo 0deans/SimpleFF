@@ -1,6 +1,8 @@
-import type { SelectOption } from './types';
+import type { SelectOption } from '@melt-ui/svelte';
 
-export const audioCodecOptions: SelectOption[] = [
+export const noneOption: SelectOption = { value: undefined, label: 'None' };
+
+export const audioCodecOptions: SelectOption<string>[] = [
 	{ value: 'aac', label: 'AAC' },
 	{ value: 'mp3', label: 'MP3' },
 	{ value: 'ac3', label: 'AC-3' },
@@ -13,7 +15,7 @@ export const audioCodecOptions: SelectOption[] = [
 	{ value: 'mp1', label: 'MP1' }
 ] as const;
 
-export const videoCodecOptions: SelectOption[] = [
+export const videoCodecOptions: SelectOption<string>[] = [
 	{ value: 'h264', label: 'H.264 (AVC)' },
 	{ value: 'vp9', label: 'VP9' },
 	{ value: 'vp8', label: 'VP8' },
@@ -28,7 +30,7 @@ export const videoCodecOptions: SelectOption[] = [
 	{ value: 'theora', label: 'Theora' }
 ] as const;
 
-export const extensionOptions: SelectOption[] = [
+export const extensionOptions: SelectOption<string>[] = [
 	{ value: 'mp4', label: 'MP4' },
 	{ value: 'mkv', label: 'MKV' },
 	{ value: 'avi', label: 'AVI' },

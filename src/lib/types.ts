@@ -9,5 +9,3 @@ export interface CompressProgressPayload {
 	filePath: string;
 	percentage: number;
 }
-
-export type SelectOption = { value: string; label: string };

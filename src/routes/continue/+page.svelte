@@ -5,17 +5,16 @@
 	import { invoke } from '@tauri-apps/api/core';
 	import type { PageData } from './$types';
 	import { open } from '@tauri-apps/plugin-dialog';
-	import { melt, createLabel, createScrollArea } from '@melt-ui/svelte';
+	import { melt, createLabel, createScrollArea, type SelectOption } from '@melt-ui/svelte';
 	import Select from '$lib/Select.svelte';
 	import { fileStore } from '$lib/state.svelte';
 	import {
 		audioCodecOptions,
 		extensionOptions,
 		formatCodecs,
+		noneOption,
 		videoCodecOptions
 	} from '$lib/constants';
-	// import { untrack } from 'svelte';
-	import type { SelectOption } from '$lib/types';
 
 	let { data }: { data: PageData } = $props();
 	const { selectedFile } = data;
@@ -33,23 +32,23 @@
 		const { video, audio } = formatCodecs[extension.value];
 
 		return {
-			video: videoCodecOptions.filter(({ value }) => video.includes(value)),
-			audio: audioCodecOptions.filter(({ value }) => audio.includes(value))
+			video: [noneOption, ...videoCodecOptions.filter(({ value }) => video.includes(value))],
+			audio: [noneOption, ...audioCodecOptions.filter(({ value }) => audio.includes(value))]
 		};
 	});
 
-	let videoCodec = $state<SelectOption | undefined>();
-	let audioCodec = $state<SelectOption | undefined>();
+	let videoCodec = $state<SelectOption>(noneOption);
+	let audioCodec = $state<SelectOption>(noneOption);
 
-	// $effect(() => {
-	// 	const isAvailable = codecOptions.video.some(({ value }) => value === videoCodec.value);
-	// 	if (!isAvailable) videoCodec = codecOptions.video[0];
-	// });
+	$effect(() => {
+		const isAvailable = codecOptions.video.some(({ value }) => value === videoCodec?.value);
+		if (!isAvailable) videoCodec = codecOptions.video[0];
+	});
 
-	// $effect(() => {
-	// 	const isAvailable = codecOptions.audio.some(({ value }) => value === audioCodec.value);
-	// 	if (!isAvailable) audioCodec = codecOptions.audio[0];
-	// });
+	$effect(() => {
+		const isAvailable = codecOptions.audio.some(({ value }) => value === audioCodec?.value);
+		if (!isAvailable) audioCodec = codecOptions.audio[0];
+	});
 
 	const {
 		elements: { root }
@@ -90,6 +89,9 @@
 			videoCodec: videoCodec?.value,
 			audioCodec: audioCodec?.value
 		};
+
+		console.log(params);
+		
 
 		invoke<boolean>('compress', { params })
 			.then((success) => {
@@ -173,14 +175,12 @@
 						<Select
 							options={codecOptions.video}
 							bind:selected={videoCodec}
-							optional
 							label="Video Codec"
 							className="w-1/2"
 						/>
 						<Select
 							options={codecOptions.audio}
 							bind:selected={audioCodec}
-							optional
 							label="Audio Codec"
 							className="w-1/2"
 						/>
