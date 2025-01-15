@@ -13,8 +13,10 @@
 		extensionOptions,
 		formatCodecs,
 		noneOption,
+		videoCodecConfig,
 		videoCodecOptions
 	} from '$lib/constants';
+	import Checkbox from '$lib/Checkbox.svelte';
 
 	let { data }: { data: PageData } = $props();
 	const { selectedFile } = data;
@@ -89,9 +91,6 @@
 			videoCodec: videoCodec?.value,
 			audioCodec: audioCodec?.value
 		};
-
-		console.log(params);
-		
 
 		invoke<boolean>('compress', { params })
 			.then((success) => {
@@ -185,6 +184,37 @@
 							className="w-1/2"
 						/>
 					</div>
+
+					{#if videoCodec.value}
+						<div class="space-y-4">
+							<div>
+								<h2 class="text-blue-600">Video Codec Options</h2>
+								<div class="border-t border-gray-400"></div>
+							</div>
+
+							{#if typeof videoCodec.value === 'string'}
+								{#each videoCodecConfig[videoCodec.value] as item}
+									{#if item.type === 'checkbox'}
+										<Checkbox label={item.name} checked />
+									{:else if item.type === 'select'}
+										<Select
+											options={item.options.map((value) => {
+												return { value, label: value };
+											})}
+											label={item.name}
+										/>
+									{/if}
+								{/each}
+							{/if}
+						</div>
+					{/if}
+
+					{#if audioCodec.value}
+						<div>
+							<h2 class="text-blue-600">Audio Codec Options</h2>
+							<div class="border-t border-gray-400"></div>
+						</div>
+					{/if}
 				</div>
 			</div>
 			<div
