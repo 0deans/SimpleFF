@@ -251,11 +251,12 @@
 				/>
 			{:else if item.type === 'input'}
 				<Input
-					bind:value={states[item.ffmpegKey] as number}
+					bind:value={states[item.ffmpegKey] as number | string}
 					defaultValue={item.defaultValue}
 					min={item.validation?.min}
 					max={item.validation?.max}
 					onchange={() => {
+						if (item.inputType === 'text') return;
 						const value = states[item.ffmpegKey] as number;
 						if (
 							item.validation &&
