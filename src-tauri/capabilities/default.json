@@ -11,6 +11,8 @@
 		"dialog:allow-open",
 		"opener:default",
 		"core:path:default",
-		"core:path:allow-join"
+		"core:path:allow-join",
+		"fs:default",
+		"fs:read-meta"
 	]
 }

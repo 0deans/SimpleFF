@@ -82,10 +82,7 @@
 		}}
 		class="flex w-full items-center justify-between border-b border-gray-300"
 	>
-		<div class="ml-2 flex items-center space-x-1">
-			<Icon icon="logos:ffmpeg-icon" />
-			<h1 class="touch-none select-none font-semibold">SimpleFF</h1>
-		</div>
+		<h1 class="ml-2 touch-none select-none font-semibold">SimpleFF</h1>
 		<div class="flex items-center">
 			<button
 				onmousedown={(e) => e.stopPropagation()}

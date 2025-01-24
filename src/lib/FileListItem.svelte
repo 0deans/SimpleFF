@@ -8,6 +8,7 @@
 	import { goto } from '$app/navigation';
 	import type { File } from './types';
 	import { writable } from 'svelte/store';
+	import { stat } from '@tauri-apps/plugin-fs';
 
 	let { file }: { file: File } = $props();
 	let isCompressing = $derived(!!file.outputPath && !file.isDone);
@@ -16,10 +17,6 @@
 		elements: { root },
 		options: { max }
 	} = createProgress({ value: writable(file.progress), max: 100 });
-
-	const get_file_size = async () => {
-		return await invoke<number>('get_file_size', { path: file.path });
-	};
 
 	const cancel = async () => {
 		await invoke('cancel_compress', { outputPath: file.outputPath });
@@ -40,8 +37,8 @@
 			<p class="break-all text-sm font-semibold">{basename(file.path)}</p>
 			<div class="mt-0.5 flex items-center justify-between">
 				<span class="text-sm text-gray-400">
-					{#await get_file_size() then size}
-						{formatFileSize(size)}
+					{#await stat(file.path) then metadata}
+						{formatFileSize(metadata.size)}
 						<span class={cn(!isCompressing && 'hidden')}>
 							| {file.progress.toFixed(0)}%
 						</span>

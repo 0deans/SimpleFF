@@ -155,13 +155,6 @@ async fn cancel_compress(
 }
 
 #[tauri::command]
-fn get_file_size(path: String) -> Result<u64, String> {
-    fs::metadata(path)
-        .map(|metadata| metadata.len())
-        .map_err(|e| e.to_string())
-}
-
-#[tauri::command]
 fn close_request(app: AppHandle, state: State<'_, Mutex<AppState>>) {
     let state = state.lock().unwrap();
     for (output_path, child) in state.ffmpeg_processes.iter() {
@@ -176,13 +169,13 @@ fn close_request(app: AppHandle, state: State<'_, Mutex<AppState>>) {
 
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
         .invoke_handler(tauri::generate_handler![
             is_ffmpeg_available,
             compress,
             cancel_compress,
-            get_file_size,
             close_request,
         ])
         .setup(|app| {

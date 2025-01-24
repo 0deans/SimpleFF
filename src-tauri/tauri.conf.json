@@ -1,6 +1,6 @@
 {
-	"productName": "simpleff",
-	"version": "0.1.0",
+	"productName": "SimpleFF",
+	"version": "0.2.0",
 	"identifier": "me.0dean.simpleff",
 	"build": {
 		"frontendDist": "../build",

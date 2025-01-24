@@ -118,18 +118,31 @@
 </script>
 
 <main class="flex size-full flex-col">
-	<div class="flex items-center space-x-2 p-3 pb-0">
-		<a href="/" class="rounded-md p-1 hover:bg-gray-200">
-			<Icon icon="ep:back" class="size-6" />
-		</a>
-		<span>Return</span>
+	<div class="flex justify-between p-3">
+		<div class="flex items-center space-x-2">
+			<a href="/" class="rounded-md p-1 hover:bg-gray-200">
+				<Icon icon="ep:back" class="size-6" />
+			</a>
+			<span>Return</span>
+		</div>
+
+		<button
+			onclick={compress}
+			disabled={!isFilenameValid}
+			class="rounded-md bg-blue-600/80 px-2 py-1 font-semibold text-white enabled:hover:bg-blue-700/80 disabled:opacity-60"
+		>
+			Process
+		</button>
 	</div>
 
 	<div class="h-0 flex-shrink-0 flex-grow basis-auto">
-		<div use:melt={$scrollRoot} class="size-full overflow-hidden">
+		<div use:melt={$scrollRoot} class="size-full">
 			<div use:melt={$scrollViewport} class="size-full">
-				<div use:melt={$scrollContent} class="!block space-y-4 p-3">
-					<h1 class="text-blue-400">{basename(selectedFile.path)}</h1>
+				<div use:melt={$scrollContent} class="!block space-y-4 px-3">
+					<div class="rounded-md border border-gray-400 bg-gray-200/70 p-2">
+						<h1 class="pb-2 font-mono text-xs font-semibold text-gray-900">Selected file name</h1>
+						<p class="text-sm font-semibold">{basename(selectedFile.path)}</p>
+					</div>
 
 					<div class="flex flex-col">
 						<!-- svelte-ignore a11y_label_has_associated_control -->
@@ -209,20 +222,12 @@
 			</div>
 			<div
 				use:melt={$scrollbarY}
-				class="flex h-[95%] w-2 touch-none select-none rounded-full border-l border-l-transparent bg-gray-900/10 p-px transition-colors"
+				class="flex h-[95%] w-2 touch-none select-none rounded-full border-l border-l-transparent bg-gray-900/10 p-px"
 			>
 				<div use:melt={$thumbY} class="relative flex-1 rounded-full bg-gray-600"></div>
 			</div>
 		</div>
 	</div>
-
-	<button
-		onclick={compress}
-		disabled={!isFilenameValid}
-		class="w-full bg-blue-600 p-2 text-white transition-transform enabled:hover:bg-blue-700 disabled:opacity-60"
-	>
-		Process
-	</button>
 </main>
 
 {#snippet codecConfig(
