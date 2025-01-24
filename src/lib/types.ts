@@ -30,6 +30,8 @@ export interface SelectOption<T> extends OptionBase {
 
 export interface InputOption extends OptionBase {
 	type: 'input';
+	inputType: 'number' | 'text';
+	defaultValue?: number | string;
 	validation?: {
 		pattern?: RegExp;
 		min?: number;

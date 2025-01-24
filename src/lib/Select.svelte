@@ -10,12 +10,7 @@
 		className?: string;
 	}
 
-	let {
-		label = 'Select an option',
-		options,
-		selected = $bindable(),
-		className = ''
-	}: Props = $props();
+	let { label, options, selected = $bindable(), className = '' }: Props = $props();
 
 	const {
 		elements: { trigger, menu, option, label: labelElement },
@@ -38,8 +33,10 @@
 </script>
 
 <div class={cn('flex flex-col', className)}>
-	<!-- svelte-ignore a11y_label_has_associated_control -->
-	<label use:melt={$labelElement}>{label}</label>
+	{#if label}
+		<!-- svelte-ignore a11y_label_has_associated_control -->
+		<label use:melt={$labelElement}>{label}</label>
+	{/if}
 	<button
 		use:melt={$trigger}
 		class="flex items-center justify-between rounded-md border-2 border-gray-200 px-3 py-2 outline-blue-200"

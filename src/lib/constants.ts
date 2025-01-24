@@ -123,6 +123,7 @@ export const videoCodecConfig: Record<string, CodecOption[]> = {
 			name: 'CRF',
 			ffmpegKey: 'crf',
 			type: 'input',
+			inputType: 'number',
 			validation: { min: 0, max: 51 },
 			defaultValue: 23,
 			description: 'Constant Rate Factor (CRF) controls the quality of the video.'
@@ -133,6 +134,7 @@ export const videoCodecConfig: Record<string, CodecOption[]> = {
 			name: 'Quality',
 			ffmpegKey: 'crf',
 			type: 'input',
+			inputType: 'number',
 			validation: { min: 0, max: 63 },
 			defaultValue: 31,
 			description: 'Controls the quality of VP9 encoding.'
@@ -141,6 +143,7 @@ export const videoCodecConfig: Record<string, CodecOption[]> = {
 			name: 'Tile Columns',
 			ffmpegKey: 'tile-columns',
 			type: 'input',
+			inputType: 'number',
 			validation: { min: 0, max: 6 },
 			defaultValue: 0,
 			description: 'Number of tile columns for parallel encoding.'
@@ -161,6 +164,7 @@ export const videoCodecConfig: Record<string, CodecOption[]> = {
 			name: 'CQ Level',
 			ffmpegKey: 'cq-level',
 			type: 'input',
+			inputType: 'number',
 			validation: { min: 0, max: 63 },
 			defaultValue: 30,
 			description: 'Controls the quality level for AV1 encoding.'
@@ -169,6 +173,7 @@ export const videoCodecConfig: Record<string, CodecOption[]> = {
 			name: 'CPU-Used',
 			ffmpegKey: 'cpu-used',
 			type: 'input',
+			inputType: 'number',
 			validation: { min: 0, max: 8 },
 			defaultValue: 4,
 			description: 'Controls the encoding speed for AV1.'
@@ -179,6 +184,7 @@ export const videoCodecConfig: Record<string, CodecOption[]> = {
 			name: 'GOP Size',
 			ffmpegKey: 'g',
 			type: 'input',
+			inputType: 'number',
 			validation: { min: 0 },
 			defaultValue: 12,
 			description: 'Sets the maximum GOP size.'
@@ -199,6 +205,7 @@ export const videoCodecConfig: Record<string, CodecOption[]> = {
 			name: 'Bitrate',
 			ffmpegKey: 'b:v',
 			type: 'input',
+			inputType: 'number',
 			validation: { min: 0 },
 			defaultValue: 1000,
 			description: 'Specifies the target bitrate for Xvid encoding.'
@@ -209,6 +216,7 @@ export const videoCodecConfig: Record<string, CodecOption[]> = {
 			name: 'Quality',
 			ffmpegKey: 'q:v',
 			type: 'input',
+			inputType: 'number',
 			validation: { min: 2, max: 31 },
 			defaultValue: 7,
 			description: 'Controls the quality of MJPEG encoding.'
@@ -219,6 +227,7 @@ export const videoCodecConfig: Record<string, CodecOption[]> = {
 			name: 'GOP Size',
 			ffmpegKey: 'g',
 			type: 'input',
+			inputType: 'number',
 			validation: { min: 0 },
 			defaultValue: 12,
 			description: 'Sets the maximum GOP size for H.263+.'
@@ -229,6 +238,7 @@ export const videoCodecConfig: Record<string, CodecOption[]> = {
 			name: 'Bitrate',
 			ffmpegKey: 'b:v',
 			type: 'input',
+			inputType: 'number',
 			validation: { min: 0 },
 			defaultValue: 2000,
 			description: 'Specifies the target bitrate for MPEG-2 encoding.'
@@ -239,6 +249,7 @@ export const videoCodecConfig: Record<string, CodecOption[]> = {
 			name: 'Bitrate',
 			ffmpegKey: 'b:v',
 			type: 'input',
+			inputType: 'number',
 			validation: { min: 0 },
 			defaultValue: 1500,
 			description: 'Specifies the target bitrate for MPEG-1 encoding.'
@@ -249,6 +260,7 @@ export const videoCodecConfig: Record<string, CodecOption[]> = {
 			name: 'Quality',
 			ffmpegKey: 'q:v',
 			type: 'input',
+			inputType: 'number',
 			validation: { min: 0, max: 10 },
 			defaultValue: 5,
 			description: 'Controls the quality of Theora encoding.'
@@ -262,6 +274,7 @@ export const audioCodecConfig: Record<string, CodecOption[]> = {
 			name: 'Bitrate',
 			ffmpegKey: 'b:a',
 			type: 'input',
+			inputType: 'number',
 			validation: { min: 8, max: 512 },
 			defaultValue: 128,
 			description: 'Specifies the target bitrate for AAC encoding (in kbps).'
@@ -280,6 +293,7 @@ export const audioCodecConfig: Record<string, CodecOption[]> = {
 			name: 'Bitrate',
 			ffmpegKey: 'b:a',
 			type: 'input',
+			inputType: 'number',
 			validation: { min: 8, max: 320 },
 			defaultValue: 192,
 			description: 'Specifies the target bitrate for MP3 encoding (in kbps).'
@@ -290,6 +304,7 @@ export const audioCodecConfig: Record<string, CodecOption[]> = {
 			name: 'Bitrate',
 			ffmpegKey: 'b:a',
 			type: 'input',
+			inputType: 'number',
 			validation: { min: 32, max: 640 },
 			defaultValue: 384,
 			description: 'Specifies the target bitrate for AC-3 encoding (in kbps).'
@@ -300,6 +315,7 @@ export const audioCodecConfig: Record<string, CodecOption[]> = {
 			name: 'Compression Level',
 			ffmpegKey: 'compression_level',
 			type: 'input',
+			inputType: 'number',
 			validation: { min: 0, max: 12 },
 			defaultValue: 5,
 			description: 'Controls the compression level for ALAC encoding.'
@@ -310,6 +326,7 @@ export const audioCodecConfig: Record<string, CodecOption[]> = {
 			name: 'Bitrate',
 			ffmpegKey: 'b:a',
 			type: 'input',
+			inputType: 'number',
 			validation: { min: 6, max: 510 },
 			defaultValue: 128,
 			description: 'Specifies the target bitrate for Opus encoding (in kbps).'
@@ -318,6 +335,7 @@ export const audioCodecConfig: Record<string, CodecOption[]> = {
 			name: 'Complexity',
 			ffmpegKey: 'compression_level',
 			type: 'input',
+			inputType: 'number',
 			validation: { min: 0, max: 10 },
 			defaultValue: 10,
 			description: 'Controls the encoding complexity for Opus.'
@@ -328,6 +346,7 @@ export const audioCodecConfig: Record<string, CodecOption[]> = {
 			name: 'Sample Rate',
 			ffmpegKey: 'ar',
 			type: 'input',
+			inputType: 'number',
 			validation: { min: 8000, max: 192000 },
 			defaultValue: 44100,
 			description: 'Specifies the sample rate for PCM encoding.'
@@ -338,6 +357,7 @@ export const audioCodecConfig: Record<string, CodecOption[]> = {
 			name: 'Quality',
 			ffmpegKey: 'q:a',
 			type: 'input',
+			inputType: 'number',
 			validation: { min: -1, max: 10 },
 			defaultValue: 3,
 			description: 'Controls the quality for Vorbis encoding.'
@@ -348,6 +368,7 @@ export const audioCodecConfig: Record<string, CodecOption[]> = {
 			name: 'Compression Level',
 			ffmpegKey: 'compression_level',
 			type: 'input',
+			inputType: 'number',
 			validation: { min: 0, max: 12 },
 			defaultValue: 5,
 			description: 'Specifies the compression level for FLAC encoding.'
@@ -358,6 +379,7 @@ export const audioCodecConfig: Record<string, CodecOption[]> = {
 			name: 'Bitrate',
 			ffmpegKey: 'b:a',
 			type: 'input',
+			inputType: 'number',
 			validation: { min: 32, max: 384 },
 			defaultValue: 192,
 			description: 'Specifies the target bitrate for MP2 encoding (in kbps).'
@@ -368,6 +390,7 @@ export const audioCodecConfig: Record<string, CodecOption[]> = {
 			name: 'Bitrate',
 			ffmpegKey: 'b:a',
 			type: 'input',
+			inputType: 'number',
 			validation: { min: 32, max: 384 },
 			defaultValue: 192,
 			description: 'Specifies the target bitrate for MP1 encoding (in kbps).'

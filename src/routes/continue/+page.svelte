@@ -9,6 +9,7 @@
 	import Select from '$lib/Select.svelte';
 	import { fileStore } from '$lib/state.svelte';
 	import {
+		audioCodecConfig,
 		audioCodecOptions,
 		extensionOptions,
 		formatCodecs,
@@ -17,6 +18,8 @@
 		videoCodecOptions
 	} from '$lib/constants';
 	import Checkbox from '$lib/Checkbox.svelte';
+	import Input from '$lib/Input.svelte';
+	import type { CodecOption } from '$lib/types';
 
 	let { data }: { data: PageData } = $props();
 	const { selectedFile } = data;
@@ -29,6 +32,9 @@
 	let filename = $state(`${basename(selectedFile.path, true)}_compressed`);
 	let extension = $state(matchingExtension || extensionOptions[0]);
 	let isFilenameValid = $state(true);
+	let videoCodecConfigStates = $state<Record<string, unknown>>({});
+	let audioCodecConfigStates = $state<Record<string, unknown>>({});
+	$inspect(videoCodecConfigStates, audioCodecConfigStates);
 
 	let codecOptions = $derived.by(() => {
 		const { video, audio } = formatCodecs[extension.value];
@@ -127,7 +133,8 @@
 					<h1 class="text-blue-400">{basename(selectedFile.path)}</h1>
 
 					<div class="flex flex-col">
-						<label use:melt={$root} for="output-path">Output path</label>
+						<!-- svelte-ignore a11y_label_has_associated_control -->
+						<label use:melt={$root}>Output path</label>
 						<div class="flex justify-between rounded-md border-2 border-gray-200">
 							<p class="scroll-hidden w-full overflow-x-auto whitespace-nowrap p-2">
 								{outputDirname}
@@ -145,23 +152,20 @@
 					</div>
 
 					<div class="flex space-x-2">
-						<div class="flex w-full flex-col">
-							<label use:melt={$root} for="filename">Output file name</label>
-							<input
-								bind:value={filename}
-								onchange={() => (isFilenameValid = filename.length > 0 && filename.length <= 200)}
-								type="text"
-								id="filename"
-								autocomplete="off"
-								class={cn(
-									'w-full rounded-md border-2 border-gray-200 p-2 outline-blue-200',
-									!isFilenameValid && 'border-red-500'
-								)}
-							/>
+						<Input
+							bind:value={filename}
+							onchange={() => (isFilenameValid = filename.length > 0 && filename.length <= 200)}
+							label="Output file name"
+							id="filename"
+							autocomplete="off"
+							classNames={{
+								input: !isFilenameValid ? 'border-red-500' : ''
+							}}
+						>
 							<p class={cn('text-red-400', isFilenameValid && 'hidden')}>
 								Must be 1-200 characters long
 							</p>
-						</div>
+						</Input>
 						<Select
 							options={extensionOptions}
 							bind:selected={extension}
@@ -185,35 +189,22 @@
 						/>
 					</div>
 
-					{#if videoCodec.value}
-						<div class="space-y-4">
-							<div>
-								<h2 class="text-blue-600">Video Codec Options</h2>
-								<div class="border-t border-gray-400"></div>
-							</div>
-
-							{#if typeof videoCodec.value === 'string'}
-								{#each videoCodecConfig[videoCodec.value] as item}
-									{#if item.type === 'checkbox'}
-										<Checkbox label={item.name} checked />
-									{:else if item.type === 'select'}
-										<Select
-											options={item.options.map((value) => {
-												return { value, label: value };
-											})}
-											label={item.name}
-										/>
-									{/if}
-								{/each}
-							{/if}
-						</div>
+					{#if videoCodec.value && typeof videoCodec.value === 'string'}
+						{@render codecConfig(
+							'Video Codec Options',
+							videoCodec.value,
+							videoCodecConfig,
+							videoCodecConfigStates
+						)}
 					{/if}
 
-					{#if audioCodec.value}
-						<div>
-							<h2 class="text-blue-600">Audio Codec Options</h2>
-							<div class="border-t border-gray-400"></div>
-						</div>
+					{#if audioCodec.value && typeof audioCodec.value === 'string'}
+						{@render codecConfig(
+							'Audio Codec Options',
+							audioCodec.value,
+							audioCodecConfig,
+							audioCodecConfigStates
+						)}
 					{/if}
 				</div>
 			</div>
@@ -234,3 +225,51 @@
 		Process
 	</button>
 </main>
+
+{#snippet codecConfig(
+	label: string,
+	codec: string,
+	codecConfig: Record<string, CodecOption[]>,
+	states: Record<string, unknown>
+)}
+	<div class="space-y-4">
+		<div>
+			<h2 class="text-blue-600">{label}</h2>
+			<div class="border-t border-gray-400"></div>
+		</div>
+
+		{#each codecConfig[codec] as item}
+			{#if item.type === 'checkbox'}
+				<Checkbox bind:checked={states[item.ffmpegKey] as boolean} label={item.name} />
+			{:else if item.type === 'select'}
+				<Select
+					bind:selected={states[item.ffmpegKey] as SelectOption}
+					options={item.options.map((value) => {
+						return { value, label: value };
+					})}
+					label={item.name}
+				/>
+			{:else if item.type === 'input'}
+				<Input
+					bind:value={states[item.ffmpegKey] as number}
+					defaultValue={item.defaultValue}
+					min={item.validation?.min}
+					max={item.validation?.max}
+					onchange={() => {
+						const value = states[item.ffmpegKey] as number;
+						if (
+							item.validation &&
+							item.validation.min !== undefined &&
+							item.validation.max !== undefined &&
+							(value < item.validation.min || value > item.validation.max)
+						) {
+							states[item.ffmpegKey] = item.defaultValue;
+						}
+					}}
+					label={item.name}
+					type={item.inputType}
+				/>
+			{/if}
+		{/each}
+	</div>
+{/snippet}
