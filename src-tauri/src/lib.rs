@@ -162,19 +162,6 @@ fn get_file_size(path: String) -> Result<u64, String> {
 }
 
 #[tauri::command]
-fn show_in_folder(path: String) -> Result<(), String> {
-    #[cfg(target_os = "windows")]
-    {
-        Command::new("explorer")
-            .args(["/select,", &path]) // comma is important
-            .creation_flags(utils::CREATE_NO_WINDOW)
-            .spawn()
-            .map_err(|e| e.to_string())?;
-    }
-    Ok(())
-}
-
-#[tauri::command]
 fn close_request(app: AppHandle, state: State<'_, Mutex<AppState>>) {
     let state = state.lock().unwrap();
     for (output_path, child) in state.ffmpeg_processes.iter() {
@@ -189,13 +176,13 @@ fn close_request(app: AppHandle, state: State<'_, Mutex<AppState>>) {
 
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
         .invoke_handler(tauri::generate_handler![
             is_ffmpeg_available,
             compress,
             cancel_compress,
             get_file_size,
-            show_in_folder,
             close_request,
         ])
         .setup(|app| {

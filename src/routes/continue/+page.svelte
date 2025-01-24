@@ -20,6 +20,7 @@
 	import Checkbox from '$lib/Checkbox.svelte';
 	import Input from '$lib/Input.svelte';
 	import type { CodecOption } from '$lib/types';
+	import { join } from '@tauri-apps/api/path';
 
 	let { data }: { data: PageData } = $props();
 	const { selectedFile } = data;
@@ -32,9 +33,10 @@
 	let filename = $state(`${basename(selectedFile.path, true)}_compressed`);
 	let extension = $state(matchingExtension || extensionOptions[0]);
 	let isFilenameValid = $state(true);
+	let videoCodec = $state<SelectOption>(noneOption);
+	let audioCodec = $state<SelectOption>(noneOption);
 	let videoCodecConfigStates = $state<Record<string, unknown>>({});
 	let audioCodecConfigStates = $state<Record<string, unknown>>({});
-	$inspect(videoCodecConfigStates, audioCodecConfigStates);
 
 	let codecOptions = $derived.by(() => {
 		const { video, audio } = formatCodecs[extension.value];
@@ -44,9 +46,6 @@
 			audio: [noneOption, ...audioCodecOptions.filter(({ value }) => audio.includes(value))]
 		};
 	});
-
-	let videoCodec = $state<SelectOption>(noneOption);
-	let audioCodec = $state<SelectOption>(noneOption);
 
 	$effect(() => {
 		const isAvailable = codecOptions.video.some(({ value }) => value === videoCodec?.value);
@@ -82,7 +81,7 @@
 	};
 
 	const compress = async () => {
-		const outputPath = `${outputDirname}\\${filename}.${extension.value}`;
+		const outputPath = await join(outputDirname, `${filename}.${extension.value}`);
 
 		fileStore.update(selectedFile.path, (file) => {
 			file.outputPath = outputPath;

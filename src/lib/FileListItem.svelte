@@ -1,6 +1,7 @@
 <script lang="ts">
 	import Icon from '@iconify/svelte';
 	import { invoke } from '@tauri-apps/api/core';
+	import { revealItemInDir } from '@tauri-apps/plugin-opener';
 	import { basename, cn, formatFileSize } from './utils';
 	import { createProgress, melt } from '@melt-ui/svelte';
 	import { fileStore, selectedFile } from './state.svelte';
@@ -24,10 +25,6 @@
 		await invoke('cancel_compress', { outputPath: file.outputPath });
 		file.outputPath = undefined;
 		file.isDone = false;
-	};
-
-	const showInFolder = async () => {
-		await invoke('show_in_folder', { path: file.outputPath });
 	};
 
 	const goNext = async () => {
@@ -56,7 +53,9 @@
 				<div class="flex items-center space-x-2">
 					{#if file.isDone}
 						<button
-							onclick={showInFolder}
+							onclick={async () => {
+								await revealItemInDir(file.outputPath!);
+							}}
 							class="rounded-md bg-gray-100 p-0.5 text-orange-500 transition-transform hover:bg-gray-200 hover:text-orange-700 active:scale-95"
 						>
 							<Icon icon="bx:bx-folder-open" class="size-5" />
