@@ -1,48 +1,24 @@
+use crate::{models::VideoParams, state::AppState, utils};
 use serde_json::json;
 use shared_child::SharedChild;
+#[cfg(target_os = "windows")]
+use std::os::windows::process::CommandExt;
 use std::{
-    collections::HashMap,
     fs,
     io::{BufRead, BufReader, Read},
     process::{Command, Stdio},
     sync::{Arc, Mutex},
     thread,
 };
-use tauri::{AppHandle, Emitter, Manager, State, WebviewUrl, WebviewWindowBuilder, WindowEvent};
-
-#[cfg(target_os = "macos")]
-use tauri::utils::TitleBarStyle;
-
-#[cfg(target_os = "windows")]
-use std::os::windows::process::CommandExt;
-
-pub mod utils;
-
-#[derive(Default)]
-struct AppState {
-    ffmpeg_processes: HashMap<String, Arc<SharedChild>>,
-}
-
-#[derive(serde::Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct VideoParams {
-    input_path: String,
-    output_path: String,
-    audio_codec: Option<String>,
-    video_codec: Option<String>,
-    #[serde(default)]
-    video_codec_params: Option<HashMap<String, String>>,
-    #[serde(default)]
-    audio_codec_params: Option<HashMap<String, String>>,
-}
+use tauri::{AppHandle, Emitter, State};
 
 #[tauri::command]
-fn is_ffmpeg_available() -> Result<bool, String> {
+pub fn is_ffmpeg_available() -> Result<bool, String> {
     let mut command = Command::new("ffmpeg");
     command.arg("-version");
 
     #[cfg(target_os = "windows")]
-    command.creation_flags(utils::CREATE_NO_WINDOW);
+    command.creation_flags(crate::utils::CREATE_NO_WINDOW);
 
     command
         .output()
@@ -51,7 +27,7 @@ fn is_ffmpeg_available() -> Result<bool, String> {
 }
 
 #[tauri::command]
-async fn compress(
+pub async fn compress(
     params: VideoParams,
     app: AppHandle,
     app_state: State<'_, Mutex<AppState>>,
@@ -62,7 +38,7 @@ async fn compress(
     }
     drop(state);
 
-    let duration = utils::get_video_duration(&params.input_path);
+    let duration = utils::ffmpeg::get_video_duration(&params.input_path);
 
     let mut command = Command::new("ffmpeg");
     command.arg("-y").arg("-i").arg(&params.input_path);
@@ -94,9 +70,6 @@ async fn compress(
         .stdout(Stdio::piped())
         .stderr(Stdio::piped());
 
-    let args = command.get_args();
-    println!("ffmpeg args: {:?}", args);
-
     #[cfg(target_os = "windows")]
     command.creation_flags(utils::CREATE_NO_WINDOW);
 
@@ -112,7 +85,7 @@ async fn compress(
             if let Ok(line) = line {
                 if line.starts_with("out_time=") {
                     if let Some(out_time) = line.split('=').nth(1) {
-                        if let Some(out_time) = utils::parse_time(out_time) {
+                        if let Some(out_time) = utils::ffmpeg::parse_time(out_time) {
                             let payload = json!({
                                 "filePath": params.input_path,
                                 "percentage": (out_time / duration) * 100.0
@@ -153,7 +126,7 @@ async fn compress(
 }
 
 #[tauri::command]
-async fn cancel_compress(
+pub async fn cancel_compress(
     output_path: String,
     state: State<'_, Mutex<AppState>>,
 ) -> Result<bool, String> {
@@ -169,79 +142,4 @@ async fn cancel_compress(
         }
     }
     Ok(true)
-}
-
-#[tauri::command]
-fn close_request(app: AppHandle, state: State<'_, Mutex<AppState>>) {
-    let state = state.lock().unwrap();
-    for (output_path, child) in state.ffmpeg_processes.iter() {
-        child.kill().expect("failed to kill child");
-        thread::sleep(std::time::Duration::from_secs(1));
-        if fs::metadata(output_path).is_ok() {
-            fs::remove_file(output_path).unwrap();
-        }
-    }
-    app.exit(0);
-}
-
-pub fn run() {
-    tauri::Builder::default()
-        .plugin(tauri_plugin_fs::init())
-        .plugin(tauri_plugin_opener::init())
-        .plugin(tauri_plugin_dialog::init())
-        .invoke_handler(tauri::generate_handler![
-            is_ffmpeg_available,
-            compress,
-            cancel_compress,
-            close_request,
-        ])
-        .setup(|app| {
-            app.manage(Mutex::new(AppState::default()));
-
-            let win_builder = WebviewWindowBuilder::new(app, "main", WebviewUrl::default())
-                .title("simpleff")
-                .inner_size(360.0, 420.0)
-                .resizable(false)
-                .fullscreen(false)
-                .decorations(false)
-                .shadow(false);
-
-            #[cfg(not(target_os = "macos"))]
-            let win_builder = win_builder.transparent(true);
-
-            #[cfg(target_os = "macos")]
-            let win_builder = win_builder.title_bar_style(TitleBarStyle::Transparent);
-
-            #[allow(unused_variables)]
-            let window = win_builder.build().unwrap();
-
-            #[cfg(target_os = "macos")]
-            {
-                use cocoa::appkit::{NSColor, NSWindow};
-                use cocoa::base::{id, nil};
-
-                let ns_window = window.ns_window().unwrap() as id;
-                unsafe {
-                    let bg_color = NSColor::colorWithRed_green_blue_alpha_(nil, 1.0, 1.0, 1.0, 1.0);
-                    ns_window.setBackgroundColor_(bg_color);
-                }
-            }
-
-            Ok(())
-        })
-        .on_window_event(|window, event| match event {
-            WindowEvent::CloseRequested { api, .. } => {
-                let app_handle = window.app_handle();
-                let state = app_handle.state::<Mutex<AppState>>();
-                let state = state.lock().unwrap();
-
-                if !state.ffmpeg_processes.is_empty() {
-                    api.prevent_close();
-                    app_handle.emit("close-requested", ()).unwrap();
-                }
-            }
-            _ => {}
-        })
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
 }

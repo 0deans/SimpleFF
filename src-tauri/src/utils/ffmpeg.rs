@@ -1,10 +1,6 @@
-use std::process::Command;
-
 #[cfg(target_os = "windows")]
 use std::os::windows::process::CommandExt;
-
-#[cfg(target_os = "windows")]
-pub const CREATE_NO_WINDOW: u32 = 0x08000000;
+use std::process::Command;
 
 pub fn get_video_duration(filepath: &String) -> f64 {
     let mut command = Command::new("ffprobe");
@@ -19,7 +15,7 @@ pub fn get_video_duration(filepath: &String) -> f64 {
     ]);
 
     #[cfg(target_os = "windows")]
-    command.creation_flags(CREATE_NO_WINDOW);
+    command.creation_flags(crate::utils::CREATE_NO_WINDOW);
 
     let output = command.output().expect("failed to execute process");
     let output_str = String::from_utf8_lossy(&output.stdout);

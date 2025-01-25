@@ -119,8 +119,6 @@
 			audioCodecParams: transformConfig(audioCodecConfigStates)
 		};
 
-		console.log(params);
-
 		invoke<boolean>('compress', { params })
 			.then((success) => {
 				if (!success) return;
