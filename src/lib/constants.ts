@@ -95,7 +95,7 @@ export const videoCodecConfig: Record<string, CodecOption[]> = {
 	h264: [
 		{
 			name: 'Profile',
-			ffmpegKey: 'profile',
+			ffmpegKey: 'profile:v',
 			type: 'select',
 			options: ['baseline', 'main', 'high'],
 			defaultValue: 'main',

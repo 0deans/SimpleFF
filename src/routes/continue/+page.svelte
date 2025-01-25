@@ -19,7 +19,7 @@
 	} from '$lib/constants';
 	import Checkbox from '$lib/Checkbox.svelte';
 	import Input from '$lib/Input.svelte';
-	import type { CodecOption } from '$lib/types';
+	import type { CodecOption, CodecParamValue } from '$lib/types';
 	import { join } from '@tauri-apps/api/path';
 
 	let { data }: { data: PageData } = $props();
@@ -35,8 +35,8 @@
 	let isFilenameValid = $state(true);
 	let videoCodec = $state<SelectOption>(noneOption);
 	let audioCodec = $state<SelectOption>(noneOption);
-	let videoCodecConfigStates = $state<Record<string, unknown>>({});
-	let audioCodecConfigStates = $state<Record<string, unknown>>({});
+	let videoCodecConfigStates = $state<Record<string, CodecParamValue>>({});
+	let audioCodecConfigStates = $state<Record<string, CodecParamValue>>({});
 
 	let codecOptions = $derived.by(() => {
 		const { video, audio } = formatCodecs[extension.value];
@@ -80,6 +80,26 @@
 		if (selected) outputDirname = selected;
 	};
 
+	const processParamValue = (value: CodecParamValue): string => {
+		if (typeof value === 'object' && value !== null) {
+			return value.value?.toString() || '';
+		}
+		return value?.toString() || '';
+	};
+
+	const transformConfig = (config: Record<string, CodecParamValue>) => {
+		return Object.entries(config).reduce(
+			(acc, [key, value]) => {
+				const stringValue = processParamValue(value);
+				if (stringValue !== '') {
+					acc[key] = stringValue;
+				}
+				return acc;
+			},
+			{} as Record<string, string>
+		);
+	};
+
 	const compress = async () => {
 		const outputPath = await join(outputDirname, `${filename}.${extension.value}`);
 
@@ -94,8 +114,12 @@
 			inputPath: selectedFile.path,
 			outputPath: outputPath,
 			videoCodec: videoCodec?.value,
-			audioCodec: audioCodec?.value
+			audioCodec: audioCodec?.value,
+			videoCodecParams: transformConfig(videoCodecConfigStates),
+			audioCodecParams: transformConfig(audioCodecConfigStates)
 		};
+
+		console.log(params);
 
 		invoke<boolean>('compress', { params })
 			.then((success) => {
@@ -248,9 +272,12 @@
 			{:else if item.type === 'select'}
 				<Select
 					bind:selected={states[item.ffmpegKey] as SelectOption}
-					options={item.options.map((value) => {
-						return { value, label: value };
-					})}
+					options={[
+						noneOption,
+						...item.options.map((value) => {
+							return { value, label: value };
+						})
+					]}
 					label={item.name}
 				/>
 			{:else if item.type === 'input'}

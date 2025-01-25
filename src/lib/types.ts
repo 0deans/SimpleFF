@@ -1,3 +1,5 @@
+import type { SelectOption as MSelectOption } from '@melt-ui/svelte';
+
 export interface File {
 	path: string;
 	outputPath?: string;
@@ -40,3 +42,4 @@ export interface InputOption extends OptionBase {
 }
 
 export type CodecOption = CheckboxOption | SelectOption<string> | InputOption;
+export type CodecParamValue<T = string> = string | number | boolean | MSelectOption<T> | undefined;

@@ -30,6 +30,10 @@ struct VideoParams {
     output_path: String,
     audio_codec: Option<String>,
     video_codec: Option<String>,
+    #[serde(default)]
+    video_codec_params: Option<HashMap<String, String>>,
+    #[serde(default)]
+    audio_codec_params: Option<HashMap<String, String>>,
 }
 
 #[tauri::command]
@@ -65,10 +69,20 @@ async fn compress(
 
     if let Some(video_codec) = params.video_codec {
         command.arg("-c:v").arg(video_codec);
+        if let Some(params) = params.video_codec_params {
+            for (key, value) in params {
+                command.arg(format!("-{}", key)).arg(value);
+            }
+        }
     }
 
     if let Some(audio_codec) = params.audio_codec {
         command.arg("-c:a").arg(audio_codec);
+        if let Some(params) = params.audio_codec_params {
+            for (key, value) in params {
+                command.arg(format!("-{}", key)).arg(value);
+            }
+        }
     }
 
     command
@@ -79,6 +93,9 @@ async fn compress(
         .arg(&params.output_path)
         .stdout(Stdio::piped())
         .stderr(Stdio::piped());
+
+    let args = command.get_args();
+    println!("ffmpeg args: {:?}", args);
 
     #[cfg(target_os = "windows")]
     command.creation_flags(utils::CREATE_NO_WINDOW);
