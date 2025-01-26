@@ -35,8 +35,7 @@
 	let isFilenameValid = $state(true);
 	let videoCodec = $state<SelectOption>(noneOption);
 	let audioCodec = $state<SelectOption>(noneOption);
-	let videoCodecConfigStates = $state<Record<string, CodecParamValue>>({});
-	let audioCodecConfigStates = $state<Record<string, CodecParamValue>>({});
+	let codecConfigStates = $state<Record<string, CodecParamValue>>({});
 
 	let codecOptions = $derived.by(() => {
 		const { video, audio } = formatCodecs[extension.value];
@@ -115,8 +114,7 @@
 			outputPath: outputPath,
 			videoCodec: videoCodec?.value,
 			audioCodec: audioCodec?.value,
-			videoCodecParams: transformConfig(videoCodecConfigStates),
-			audioCodecParams: transformConfig(audioCodecConfigStates)
+			codecParams: transformConfig(codecConfigStates)
 		};
 
 		invoke<boolean>('compress', { params })
@@ -228,7 +226,7 @@
 							'Video Codec Options',
 							videoCodec.value,
 							videoCodecConfig,
-							videoCodecConfigStates
+							codecConfigStates
 						)}
 					{/if}
 
@@ -237,7 +235,7 @@
 							'Audio Codec Options',
 							audioCodec.value,
 							audioCodecConfig,
-							audioCodecConfigStates
+							codecConfigStates
 						)}
 					{/if}
 				</div>

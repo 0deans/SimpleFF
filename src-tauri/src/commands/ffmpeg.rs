@@ -43,21 +43,17 @@ pub async fn compress(
     let mut command = Command::new("ffmpeg");
     command.arg("-y").arg("-i").arg(&params.input_path);
 
-    if let Some(video_codec) = params.video_codec {
-        command.arg("-c:v").arg(video_codec);
-        if let Some(params) = params.video_codec_params {
-            for (key, value) in params {
-                command.arg(format!("-{}", key)).arg(value);
-            }
-        }
+    if let Some(video_code) = params.video_codec {
+        command.arg("-c:v").arg(video_code);
     }
 
     if let Some(audio_codec) = params.audio_codec {
         command.arg("-c:a").arg(audio_codec);
-        if let Some(params) = params.audio_codec_params {
-            for (key, value) in params {
-                command.arg(format!("-{}", key)).arg(value);
-            }
+    }
+
+    if let Some(params) = params.codec_params {
+        for (key, value) in params {
+            command.arg(format!("-{}", key)).arg(value);
         }
     }
 

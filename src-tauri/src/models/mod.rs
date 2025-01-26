@@ -9,7 +9,5 @@ pub struct VideoParams {
     pub audio_codec: Option<String>,
     pub video_codec: Option<String>,
     #[serde(default)]
-    pub video_codec_params: Option<HashMap<String, String>>,
-    #[serde(default)]
-    pub audio_codec_params: Option<HashMap<String, String>>,
+    pub codec_params: Option<HashMap<String, String>>,
 }
