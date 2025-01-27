@@ -19,8 +19,8 @@ fn main() {
         .plugin(tauri_plugin_dialog::init())
         .invoke_handler(tauri::generate_handler![
             commands::ffmpeg::is_ffmpeg_available,
-            commands::ffmpeg::compress,
-            commands::ffmpeg::cancel_compress,
+            commands::ffmpeg::process_video,
+            commands::ffmpeg::cancel_video_processing,
             commands::close_request,
         ])
         .setup(|app| {

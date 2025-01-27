@@ -117,9 +117,8 @@
 			codecParams: transformConfig(codecConfigStates)
 		};
 
-		invoke<boolean>('compress', { params })
-			.then((success) => {
-				if (!success) return;
+		invoke<boolean>('process_video', { params })
+			.then(() => {
 				fileStore.update(selectedFile.path, (file) => {
 					file.isDone = true;
 					return file;

@@ -19,7 +19,7 @@
 	} = createProgress({ value: writable(file.progress), max: 100 });
 
 	const cancel = async () => {
-		await invoke('cancel_compress', { outputPath: file.outputPath }).catch(console.error);
+		await invoke('cancel_video_processing', { outputPath: file.outputPath }).catch(console.error);
 		file.outputPath = undefined;
 		file.isDone = false;
 	};

@@ -27,16 +27,20 @@ pub fn is_ffmpeg_available() -> Result<bool, String> {
 }
 
 #[tauri::command]
-pub async fn compress(
+pub async fn process_video(
     params: VideoParams,
     app: AppHandle,
     app_state: State<'_, Mutex<AppState>>,
-) -> Result<bool, String> {
-    let state = app_state.lock().unwrap();
-    if state.ffmpeg_processes.contains_key(&params.output_path) {
-        return Ok(false);
+) -> Result<(), String> {
+    {
+        let state = app_state.lock().unwrap();
+        if state.ffmpeg_processes.contains_key(&params.output_path) {
+            return Err(format!(
+                "Another compression process is already running for {}",
+                params.output_path
+            ));
+        }
     }
-    drop(state);
 
     let duration = utils::ffmpeg::get_video_duration(&params.input_path);
 
@@ -103,26 +107,31 @@ pub async fn compress(
         reader.read_to_string(&mut *error).unwrap();
     });
 
-    let mut state = app_state.lock().unwrap();
-    state
-        .ffmpeg_processes
-        .insert(params.output_path.clone(), child_arc.clone());
-    drop(state);
+    {
+        let mut state = app_state.lock().unwrap();
+        state
+            .ffmpeg_processes
+            .insert(params.output_path.clone(), child_arc.clone());
+    }
 
     let exit_status = child_arc.wait().unwrap();
     let mut state = app_state.lock().unwrap();
     state.ffmpeg_processes.remove(&params.output_path);
 
-    let error = error.lock().unwrap();
-    if !error.is_empty() {
-        return Err(error.clone());
+    let error_message = error.lock().unwrap().clone();
+    if !error_message.is_empty() {
+        return Err(error_message);
     }
 
-    Ok(exit_status.success())
+    if !exit_status.success() {
+        return Err("FFmpeg process failed with non-zero exit status".to_string());
+    }
+
+    Ok(())
 }
 
 #[tauri::command]
-pub async fn cancel_compress(
+pub async fn cancel_video_processing(
     output_path: String,
     state: State<'_, Mutex<AppState>>,
 ) -> Result<(), String> {
