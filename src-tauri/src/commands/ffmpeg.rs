@@ -125,17 +125,28 @@ pub async fn compress(
 pub async fn cancel_compress(
     output_path: String,
     state: State<'_, Mutex<AppState>>,
-) -> Result<bool, String> {
-    let mut state = state.lock().map_err(|_| "Failed to lock state")?;
-    if let Some(child) = state.ffmpeg_processes.remove(&output_path) {
-        if let Err(e) = child.kill() {
-            return Err(format!("Failed to kill child: {}", e));
-        }
+) -> Result<(), String> {
+    let child = {
+        let mut state = state
+            .lock()
+            .map_err(|e| format!("State lock error: {}", e))?;
+        state
+            .ffmpeg_processes
+            .remove(&output_path)
+            .ok_or_else(|| format!("Process not found for {}", output_path))?
+    };
 
-        thread::sleep(std::time::Duration::from_secs(1));
-        if fs::metadata(&output_path).is_ok() {
-            fs::remove_file(&output_path).map_err(|e| e.to_string())?;
-        }
+    if let Err(e) = child.kill() {
+        return Err(format!("Failed to kill child: {}", e));
     }
-    Ok(true)
+
+    let _ = child.wait().map_err(|e| format!("Wait failed: {}", e))?;
+
+    match fs::remove_file(&output_path) {
+        Ok(_) => {}
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => {}
+        Err(e) => return Err(format!("Failed to remove file: {}", e)),
+    }
+
+    Ok(())
 }
